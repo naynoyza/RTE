@@ -1,0 +1,14 @@
+# ไฟล์ใหญ่เก็บด้วย Git LFS (GitHub จำกัดไฟล์ละ 100MB)
+*.obj filter=lfs diff=lfs merge=lfs -text
+*.fbx filter=lfs diff=lfs merge=lfs -text
+*.mp4 filter=lfs diff=lfs merge=lfs -text
+*.onnx filter=lfs diff=lfs merge=lfs -text
+*.psd filter=lfs diff=lfs merge=lfs -text
+*.pdf filter=lfs diff=lfs merge=lfs -text
+
+# Unity YAML: ให้ merge แบบข้อความ
+*.unity text eol=lf
+*.prefab text eol=lf
+*.asset text eol=lf
+*.meta text eol=lf
+*.bat text eol=crlf

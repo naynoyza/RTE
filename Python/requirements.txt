@@ -1,0 +1,9 @@
+# Tracker (กล้อง + YOLO pose)
+numpy==1.26.4
+opencv-python==4.11.0.86
+onnxruntime-directml==1.24.4
+pygrabber==0.2
+pyorbbecsdk2==2.1.3
+# Tools/ (สร้างสไปรต์/ฟอนต์) — ไม่จำเป็นถ้าแค่เล่น
+pillow==12.3.0
+fonttools==4.68.0
