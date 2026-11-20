@@ -4,12 +4,13 @@
 // หน้าที่ : ทุกอย่างที่เกิดบนจอของผู้เล่นคนนั้น
 //           • เดิน: ถนนเลื่อนตามความเร็วจาก WalkController
 //           • ขยะ : เกิดตามระยะทาง เลื่อนเข้าหาผู้เล่น เลยตัวไปแล้ว = หลุด (combo หาย)
-//           • เล็ง: เป้าเล็งตามมือที่ยก แตะขยะ = ดูดทันที -> ได้คะแนน + ลงถุง; เล็งพลาดขยะก็เลยตัวไป
+//           • เล็ง: เป้าเล็งตามมือที่ยก แตะขยะ = ดูดทันที -> ได้คะแนน + นับเป็นรีไซเคิล (GOAL); เล็งพลาดขยะก็เลยตัวไป
+//           • ระยะดูด: ขยะต้องเข้ามาใกล้กว่า SuckRange (สัดส่วนของระยะเกิด) จึงจะดูดได้
+//           • กัน AFK: เล็งค้างจุดเดิมนานเกิน AfkSeconds = ปืนหยุดดูดจนกว่าจะขยับมือ
 //           • ขยะที่เล็งยาก (ชิ้นเล็ก/ริมถนน/ขยะพิเศษ) เคลื่อนช้ากว่า จึงอยู่บนจอนานกว่า
-//           • ถุงเต็ม: เกิดถังรีไซเคิลข้างถนน เล็งแตะถัง -> เทถุง -> นับเป็น GOAL
 //           • ปืน 3D (VacuumGun) ถือมือข้างที่ยก, ลำแสงดูดจากปากปืนถึงเป้า
 // ดึงข้อมูล: TrackedPlayer ของตัวเอง (present, hand, use, x, y, steps, dist, kp)
-// ส่งออก  : Score, Bag, Recycled, ImpactCollected/ImpactSpawned (ให้หน้าสรุปผล)
+// ส่งออก  : Score, Recycled, ImpactCollected/ImpactSpawned (ให้หน้าสรุปผล)
 // =====================================================================================================
 using System.Collections.Generic;
 using UnityEngine;
@@ -19,7 +20,7 @@ namespace RTE
 {
     public class PlayerLane
     {
-        public int Score, Bag, Recycled, Combo, ImpactCollected, ImpactSpawned;
+        public int Score, Recycled, Combo, ImpactCollected, ImpactSpawned;
 
         readonly GameSettings settings;
         readonly int slot;
@@ -35,8 +36,10 @@ namespace RTE
 
         Vector2 aim;                 // เป้าเล็ง (พิกเซลจากกึ่งกลางจอครึ่ง)
         int hand = -1;               // มือที่ถือปืน 0 ซ้าย / 1 ขวา / -1 ไม่ได้ยก
-        float nextSpawnIn, binCooldown, toastTime;
-        bool binOnRoad;
+        float nextSpawnIn, toastTime;
+        Vector2 afkAnchor;           // จุดที่เป้าเล็งค้างอยู่ (ใช้ตรวจ AFK)
+        float stillTime;             // เป้าเล็งค้างอยู่ใกล้ afkAnchor มากี่วินาทีแล้ว
+        bool afk;                    // ค้างนานเกิน -> ดูดไม่ได้จนกว่าจะขยับ
 
         const float PassZ = 1.2f;    // ขยะเข้าใกล้กว่านี้ = เดินผ่านไปแล้ว
         const float RoadHalf = 1.3f; // ครึ่งความกว้างถนน (เมตร)
@@ -62,8 +65,10 @@ namespace RTE
             beam.color = Color.clear;
             gun = new VacuumGun(view, slot, color);
 
-            crosshair = UIKit.Img("Crosshair", view, UIKit.Load("fx_ring"), new Vector2(130, 130), false);
-            lockFill = UIKit.Img("LockFill", crosshair.transform, UIKit.Load("fx_ring"), new Vector2(170, 170), false);
+            // วงเป้าเล็ง = ระยะดูดจริง (เส้นวงใน sprite fx_ring อยู่ที่ ~89% ของขนาดรูป)
+            float ring = settings.HitRadiusPx * 2f / .89f;
+            crosshair = UIKit.Img("Crosshair", view, UIKit.Load("fx_ring"), new Vector2(ring, ring), false);
+            lockFill = UIKit.Img("LockFill", crosshair.transform, UIKit.Load("fx_ring"), new Vector2(ring * 1.3f, ring * 1.3f), false);
             lockFill.type = Image.Type.Filled; lockFill.fillMethod = Image.FillMethod.Radial360;
             lockFill.fillOrigin = (int)Image.Origin360.Top; lockFill.color = new Color(.4f, 1f, .5f);
             crosshairDot = UIKit.Img("Dot", crosshair.transform, UIKit.Load("fx_circle"), new Vector2(14, 14), false);
@@ -83,9 +88,9 @@ namespace RTE
         {
             foreach (var p in pieces) p.Destroy();
             pieces.Clear();
-            Score = Bag = Recycled = Combo = ImpactCollected = ImpactSpawned = 0;
+            Score = Recycled = Combo = ImpactCollected = ImpactSpawned = 0;
             walk.Reset();
-            nextSpawnIn = 2; binOnRoad = false; toastTime = 0; toast.text = "";
+            nextSpawnIn = 2; toastTime = 0; stillTime = 0; afk = false; toast.text = "";
             RefreshHud();
         }
 
@@ -109,6 +114,8 @@ namespace RTE
                 var target = new Vector2((p.x - .5f) * LaneW, (p.y - .5f) * LaneH);
                 aim = Vector2.Lerp(aim, target, 1 - Mathf.Exp(-dt * 18));
             }
+            UpdateAfk(playing, dt);
+            hud.SetWarning(afk ? "ห้ามเล็งค้างที่เดิม!\nขยับมือเล็งขยะ" : "");
 
             // 3) ข้อความเตือน
             UpdateToast(p, cameraOnline, playing, present, dt);
@@ -118,7 +125,7 @@ namespace RTE
             if (showWorld)
             {
                 if (playing) SpawnByDistance(metersThisFrame, dt);
-                target2 = playing && hand >= 0 ? FindTargetUnderCrosshair() : null;
+                target2 = playing && hand >= 0 && !afk ? FindTargetUnderCrosshair() : null;
                 MoveAndCollect(metersThisFrame, target2, dt);
             }
 
@@ -130,37 +137,50 @@ namespace RTE
         }
 
         // ------------------------------------------------------------------ ขยะ
-        // เกิดขยะทุก 2.2–3.8 เมตรที่เดิน; ถุงเต็มแล้วให้เกิดถังรีไซเคิล 1 ถัง
+        // เกิดขยะทุก 2.2–3.8 เมตรที่เดิน
         void SpawnByDistance(float meters, float dt)
         {
             nextSpawnIn -= meters;
             if (nextSpawnIn <= 0)
             {
-                var t = new TrashPiece(trashLayer, false, Random.Range(-RoadHalf, RoadHalf) * .9f, settings.TrashScale, settings.HardSlowdown);
+                var t = new TrashPiece(trashLayer, Random.Range(-RoadHalf, RoadHalf) * .9f, settings.TrashScale, settings.HardSlowdown);
                 ImpactSpawned += t.BaseScore;
                 pieces.Add(t);
                 nextSpawnIn = Random.Range(2.2f, 3.8f);
             }
-            binCooldown -= dt;
-            if (Bag >= settings.BagSize && !binOnRoad && binCooldown <= 0)
+        }
+
+        // กัน AFK: เป้าเล็งต้องขยับออกจากจุดเดิมเกิน AfkMovePx ภายใน AfkSeconds ไม่งั้นดูดไม่ได้
+        void UpdateAfk(bool playing, float dt)
+        {
+            if (!playing || hand < 0) { stillTime = 0; afk = false; afkAnchor = aim; return; }
+            if (Vector2.Distance(aim, afkAnchor) > settings.AfkMovePx)
             {
-                pieces.Add(new TrashPiece(trashLayer, true, (Random.value < .5f ? -1 : 1) * RoadHalf * .8f, 1f, 0f));
-                binOnRoad = true;
+                afkAnchor = aim; stillTime = 0; afk = false;
+                return;
+            }
+            stillTime += dt;
+            if (stillTime >= settings.AfkSeconds)
+            {
+                afk = true;
             }
         }
 
-        // ขยะที่ใกล้เป้าเล็งที่สุด (ต้องอยู่ในรัศมีตามขนาดของมัน และไม่ไกลเกินไป)
+        // ขยะที่ใกล้เป้าเล็งที่สุด (จุดกลางขยะต้องอยู่ในวงเป้าเล็ง และเข้ามาในระยะดูดแล้ว)
         TrashPiece FindTargetUnderCrosshair()
         {
             TrashPiece best = null; float bestDist = float.MaxValue;
             foreach (var t in pieces)
             {
-                if (t.SuckProgress >= 0 || t.Z > TrashPiece.SpawnZ - 1.5f) continue;
+                if (t.SuckProgress >= 0 || !InRange(t)) continue;
                 float d = Vector2.Distance(t.ScreenPos, aim);
-                if (d < Mathf.Max(settings.MinHitPx, t.ScreenSize * settings.HitRadius) && d < bestDist) { best = t; bestDist = d; }
+                if (d < settings.HitRadiusPx && d < bestDist) { best = t; bestDist = d; }
             }
             return best;
         }
+
+        // ขยะเข้ามาใกล้กว่า SuckRange x ระยะเกิด แล้วหรือยัง (เช่น 0.5 = ต้องเดินเข้าไปเกินครึ่งทาง)
+        bool InRange(TrashPiece t) => t.Z <= TrashPiece.SpawnZ * settings.SuckRange;
 
         // เลื่อนขยะเข้าหาผู้เล่น, สะสมเวลาเล็ง, เริ่มดูดเมื่อครบ, ลบชิ้นที่เดินผ่านไปแล้ว
         void MoveAndCollect(float meters, TrashPiece target, float dt)
@@ -176,42 +196,29 @@ namespace RTE
                 t.Z -= meters * t.Pace;
                 if (t.IsRare && (t.RareLife -= dt) <= 0) { Remove(i); continue; }
 
-                // เป้าเล็งแตะ = ดูดทันที (ถุงเต็มดูดขยะไม่ได้, ถุงว่างเทที่ถังไม่ได้)
-                bool canTake = t.IsBin ? Bag > 0 : Bag < settings.BagSize;
-                if (t == target && canTake) { t.SuckProgress = 0; continue; }
+                // เป้าเล็งแตะ = ดูดทันที
+                if (t == target) { t.SuckProgress = 0; continue; }
 
                 if (t.Z < PassZ)                                           // เดินผ่านไปแล้ว
                 {
-                    if (t.IsBin) { binOnRoad = false; binCooldown = 1f; }
-                    else Combo = 0;
+                    Combo = 0;
                     Remove(i); continue;
                 }
+                t.InRange = InRange(t);
                 t.Place();
             }
             pieces.Sort((a, b) => b.Z.CompareTo(a.Z));                     // ชิ้นใกล้วาดทับชิ้นไกล
             for (int i = 0; i < pieces.Count; i++) pieces[i].Rect.SetSiblingIndex(i);
-            if (target != null && !target.IsBin && Bag >= settings.BagSize && toastTime <= 0)
-                ShowToast("BAG FULL! เล็งไปที่ถังรีไซเคิล", new Color(1f, .4f, .3f));
         }
 
-        // ดูดสำเร็จ: ถัง = เทถุงนับเป็นรีไซเคิล | ขยะ = คะแนน + โบนัส combo, ลงถุง
+        // ดูดสำเร็จ: คะแนน + โบนัส combo, นับเป็นรีไซเคิลทันที (ไม่มีถุง/ถังแล้ว)
         void Collect(TrashPiece t)
         {
-            if (t.IsBin)
-            {
-                Recycled += Bag;
-                ShowToast($"รีไซเคิล {Bag} ชิ้น! ♻", new Color(.5f, 1f, .5f));
-                Bag = 0; binOnRoad = false;
-            }
-            else
-            {
-                Combo++;
-                int bonus = TrashCatalog.ComboBonus(Combo);
-                Score += t.Points + bonus; Bag++; ImpactCollected += t.BaseScore;
-                ShowToast($"+{t.Points}{(bonus > 0 ? $"  COMBO x{Combo} +{bonus}" : "")}\n{t.Kind.Name}{(t.IsRare ? "  ✦RARE" : "")}",
-                          t.IsRare ? new Color(1f, .9f, .3f) : Color.white);
-                if (Bag >= settings.BagSize) binCooldown = .5f;
-            }
+            Combo++;
+            int bonus = TrashCatalog.ComboBonus(Combo);
+            Score += t.Points + bonus; Recycled++; ImpactCollected += t.BaseScore;
+            ShowToast($"+{t.Points}{(bonus > 0 ? $"  COMBO x{Combo} +{bonus}" : "")}\n{t.Kind.Name}{(t.IsRare ? "  ✦RARE" : "")}",
+                      t.IsRare ? new Color(1f, .9f, .3f) : Color.white);
             RefreshHud();
         }
 
@@ -225,7 +232,7 @@ namespace RTE
             hint.enabled = playing && present && hand < 0;
             crosshair.rectTransform.anchoredPosition = aim;
             lockFill.fillAmount = target != null ? 1 : 0;
-            crosshair.color = target != null ? new Color(.4f, 1f, .5f) : color;
+            crosshair.color = afk ? new Color(1f, .3f, .25f) : target != null ? new Color(.4f, 1f, .5f) : color;
             crosshair.rectTransform.localScale = Vector3.one * (target != null ? .85f + .1f * Mathf.Sin(Time.time * 20) : 1f);
         }
 
@@ -253,6 +260,6 @@ namespace RTE
 
         void ShowToast(string text, Color c, float seconds = 1.4f) { toast.text = text; toast.color = c; toastTime = seconds; }
 
-        void RefreshHud() => hud.SetNumbers(Score, Bag, settings.BagSize, Recycled, settings.Goal);
+        void RefreshHud() => hud.SetNumbers(Score, Recycled, settings.Goal);
     }
 }

@@ -3,6 +3,7 @@
 // -----------------------------------------------------------------------------------------------------
 // หน้าที่ : ทำจอมืดลง + ตัวอักษรใหญ่ + คำอธิบาย
 //           Countdown(): 3-2-1-GO! พร้อมวิธีเล่น
+//           ShowMessage(): ข้อความใด ๆ (หน้าสรุปผลของ The Last Seed)
 //           ShowResult(): ผู้ชนะ, คะแนน, จำนวนรีไซเคิล, Air Recovery ของทีม
 // ดึงข้อมูล: คะแนน/รีไซเคิล/ค่าผลกระทบ จาก PlayerLane ทั้งสองฝั่ง
 // ใช้โดย  : WasteHunters (สถานะ Countdown และ Result)
@@ -34,10 +35,11 @@ namespace RTE
         public void Hide() { dim.enabled = panel.enabled = false; big.text = sub.text = ""; }
 
         // 3-2-1-GO! แต่ละตัวเด้งขยายแล้วค้าง 0.9 วินาที
-        public IEnumerator Countdown()
+        // hint = คำอธิบายวิธีเล่นใต้ตัวเลข (ไม่ใส่ = ของ Waste Hunters)
+        public IEnumerator Countdown(string hint = null)
         {
             dim.enabled = true;
-            sub.text = "ยกมือเล็งปืนให้แตะขยะ = ดูดทันที  •  เดินอัตโนมัติ ย่ำเท้า = เร่งสปีด";
+            sub.text = hint ?? "ยกมือเล็งปืนให้แตะขยะ = ดูดทันที  •  เดินอัตโนมัติ ย่ำเท้า = เร่งสปีด";
             foreach (var s in new[] { "3", "2", "1", "GO!" })
             {
                 big.text = s;
@@ -48,6 +50,14 @@ namespace RTE
                 }
             }
             Hide();
+        }
+
+        // ข้อความใหญ่ + คำอธิบาย บนแผงกลางจอ (ใช้เป็นหน้าสรุปผลของภารกิจอื่น)
+        public void ShowMessage(string title, string detail)
+        {
+            dim.enabled = panel.enabled = true;
+            big.rectTransform.localScale = Vector3.one;
+            big.text = title; sub.text = detail;
         }
 
         // Air Recovery = คะแนนผลกระทบของขยะที่เก็บได้ ÷ ของขยะที่เกิดทั้งหมด (ทั้งทีม)
