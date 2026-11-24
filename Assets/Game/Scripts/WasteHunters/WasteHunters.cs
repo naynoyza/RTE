@@ -4,10 +4,12 @@
 // หน้าที่ : สร้าง Canvas และทุกหน้าจอ แล้วสลับหน้าจอตามสถานะของเกม
 //
 //   Cover (วิดีโอ + UI 0, รอครบ 2 คน) ──> Select (ยกแขนเลือกตัวละคร, นับ 3 วิ, ซูม cinematic)
-//     ──> Tutorial (สอนเล่น) ──> Countdown ──> Play ──(หมดเวลา/ถึงเป้า)──> Result ──(10 วิ)──> Cover
+//     ──> Practice (สอนเล่นซ้อนบนฉากจริง: ซ้อมดูด 1 ชิ้น + ย่ำเท้า, READY ทั้งคู่ / 15 วิ) ──> Countdown ──> Play ──(หมดเวลา/ถึงเป้า)──> Result ──(10 วิ)──> Cover
 //
 // ดึงข้อมูล: TrackingReceiver.I.Players (ข้อมูล P1/P2 จากกล้อง) และค่าปรับเกมใน Settings
 // ส่งต่อ  : แต่ละเฟรมส่งข้อมูลผู้เล่นให้ PlayerLane ของคนนั้นไปจัดการเดิน/เล็ง/เก็บขยะ
+// เฝ้าผู้เล่น: ตั้งแต่หน้าเลือกตัวละครจนจบเกม 2 (PresenceGuard) หลุดนาน -> กลับหน้าปก
+// จบเกม 1 -> โหลดฉาก The Last Seed (เกม 2) -> จบเกม 2 -> กลับหน้าปก
 // ปุ่มลัด : Space = ข้ามหน้าปก/เลือกตัวละคร/สอน (ไม่มีกล้อง: P1 Q/E, P2 U/O = ยกแขนซ้าย/ขวา), R = กลับหน้าปก, F1 = ข้อมูลดีบัก, Esc = ออก
 // =====================================================================================================
 using System.Collections;
@@ -21,7 +23,7 @@ namespace RTE
     {
         public GameSettings Settings = new GameSettings();
 
-        enum State { Cover, Select, Tutorial, Countdown, Play, Result }
+        enum State { Cover, Select, Practice, Countdown, Play, Result }
         State state;
 
         PlayerLane[] lanes;
@@ -30,7 +32,9 @@ namespace RTE
         CenterOverlay overlay;
         IntroCover cover;
         CharacterSelect select;
-        TutorialScreen tutorial;
+        PracticeOverlay practice;
+        WasteEvents events;
+        PresenceGuard guard;
         Text debugText;
         float timeLeft;
         bool showDebug;
@@ -57,7 +61,14 @@ namespace RTE
                 case "select": GoSelect(); break;
                 case "pick": GameSession.Heroes[0] = Hero.Male; GameSession.Heroes[1] = Hero.Female; select.DebugPick(); break;
                 case "pick1": GameSession.Heroes[0] = Hero.Male; select.DebugPick(0); break;
-                case "tutorial": GoTutorial(); break;
+                case "tutorial": GoPractice(); break;
+                case "done1": lanes[0].DidVacuum = lanes[0].DidStep = true; break;
+                case "done2": lanes[1].DidVacuum = lanes[1].DidStep = true; break;
+                case "fever": events.StartFever(lanes); break;
+                case "dust": events.StartDust(lanes); break;
+                case "stun": lanes[1].DebugStun(); break;
+                case "danger": foreach (var l in lanes) l.SpawnDanger(); break;
+                case "overdrive": foreach (var l in lanes) l.StartOverdrive(); break;
                 case "play": StopAllCoroutines(); StartCoroutine(CountdownThenPlay()); break;
             }
         }
@@ -81,12 +92,12 @@ namespace RTE
             hudRoot = hud.gameObject;
 
             overlay = new CenterOverlay(canvas);
-            tutorial = new TutorialScreen(canvas, "GAME 01", "WASTE HUNTERS", "เก็บขยะ กู้อากาศ", "ย่ำเท้า + ยกมือเล็ง",
-                new[] { "เดินอัตโนมัติ ย่ำเท้าเพื่อเร่งความเร็ว", "ขยะจะลอยเข้ามาบนถนนของตัวเอง", "ยกมือเล็งปืนให้แตะขยะ = ดูดทันที", "เก็บให้ครบเป้าก่อนหมดเวลา ชนะ!" },
-                "ย่ำเท้า  ▶  ยกมือ", "tut/g1", "wh/road");
+            events = new WasteEvents(hud);
+            practice = new PracticeOverlay(canvas);
             select = new CharacterSelect(canvas);
             cover = new IntroCover(canvas, gameObject);
 
+            guard = new PresenceGuard(canvas);
             debugText = UIKit.Label("Debug", canvas, "", 22, Color.yellow, TextAnchor.LowerCenter);
             UIKit.Anchor(debugText.rectTransform, new Vector2(.5f, 0), new Vector2(0, 6));
         }
@@ -96,7 +107,9 @@ namespace RTE
         {
             StopAllCoroutines();
             state = State.Cover;
-            select.Hide(); tutorial.Hide(); hudRoot.SetActive(false); overlay.Hide();
+            GameSession.Active = false; GameSession.Clear(); guard.Hide();
+            select.Hide(); practice.Hide(); hudRoot.SetActive(false); overlay.Hide();
+            foreach (var lane in lanes) lane.Practice = false;
             foreach (var lane in lanes) lane.Reset();
             cover.Show();
         }
@@ -105,19 +118,25 @@ namespace RTE
         {
             state = State.Select;
             cover.Hide(); select.Show();
+            GameSession.Active = true; guard.Reset();
         }
 
-        void GoTutorial()
+        // สอนเล่นซ้อนบนฉากเกมจริง: ผู้เล่นเดิน/เล็ง/ดูดได้จริง แต่ขยะเป็นของซ้อม
+        void GoPractice()
         {
-            state = State.Tutorial;
-            select.Hide(); tutorial.Show();
+            state = State.Practice;
+            cover.Hide(); select.Hide(); hudRoot.SetActive(true);
+            foreach (var lane in lanes) { lane.Reset(); lane.Practice = true; }
+            timer.Set(Settings.RoundSeconds);
+            practice.Show();
         }
 
         IEnumerator CountdownThenPlay()
         {
             state = State.Countdown;
-            tutorial.Hide(); hudRoot.SetActive(true);
-            foreach (var lane in lanes) lane.Reset();
+            practice.Hide(); hudRoot.SetActive(true);
+            foreach (var lane in lanes) { lane.Practice = false; lane.Reset(); }
+            events.Reset();
             timeLeft = Settings.RoundSeconds; timer.Set(timeLeft);
             yield return overlay.Countdown();
             state = State.Play;
@@ -128,7 +147,8 @@ namespace RTE
             state = State.Result;
             overlay.ShowResult(lanes[0], lanes[1]);
             yield return new WaitForSeconds(10f);
-            GoCover();
+            if (GameSession.Active) UnityEngine.SceneManagement.SceneManager.LoadScene(GameSession.Game2Scene);   // ไปเกม 2
+            else GoCover();
         }
 
         // ================================================================== ทุกเฟรม
@@ -153,24 +173,29 @@ namespace RTE
                     break;
 
                 case State.Select:     // ยกแขนเลือกตัวละคร -> นับ 3 วิ -> ซูม cinematic
-                    if (select.Tick(players, online, skip) == CharacterSelect.Result.Done) GoTutorial();
+                    if (select.Tick(players, online, skip) == CharacterSelect.Result.Done) GoPractice();
                     break;
 
-                case State.Tutorial:   // หน้าต่างสอนก่อนเล่น
-                    if (tutorial.Tick(players, online, skip)) StartCoroutine(CountdownThenPlay());
+                case State.Practice:   // สอนเล่นซ้อนบนฉากจริง (READY ทั้งคู่ หรือครบ 15 วิ)
+                    if (practice.Tick(lanes, skip)) StartCoroutine(CountdownThenPlay());
                     break;
 
                 case State.Play:       // นับเวลา และเช็กว่าจบหรือยัง
                     timeLeft -= Time.deltaTime;
                     timer.Set(timeLeft);
+                    events.Tick(Settings.RoundSeconds - timeLeft, lanes);
                     if (timeLeft <= 0 || lanes[0].Recycled >= Settings.Goal || lanes[1].Recycled >= Settings.Goal)
                         StartCoroutine(ShowResultThenCover());
                     break;
             }
 
             // จอผู้เล่นทั้งสองทำงานทุกเฟรม (นอกช่วงเล่นจะหยุดเดินและซ่อนขยะ/ปืนเอง)
-            bool playing = state == State.Play;
+            bool playing = state == State.Play || state == State.Practice;
             bool showWorld = playing || state == State.Countdown;
+            // เฝ้าผู้เล่นตั้งแต่หน้าเลือกตัวละคร (หน้าปกไม่ต้อง เพราะรอคนอยู่แล้ว)
+            if (state == State.Cover) guard.Hide();
+            else if (guard.Tick(players, online)) { GoCover(); return; }
+
             for (int i = 0; i < 2; i++) lanes[i].Tick(players[i], online, playing, showWorld);
 
             debugText.text = !showDebug ? "" :

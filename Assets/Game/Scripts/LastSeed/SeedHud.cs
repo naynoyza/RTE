@@ -124,6 +124,15 @@ namespace RTE
 
         public void Popup(string text) { popup.text = text; popupTime = 0; }
 
+        // โหมดสอนเล่น: กรอบต้นไม้กลายเป็นหัวข้อ HOW TO PLAY • 15s, ซ่อนระยะ / NATURE BALANCE / เวลา / ข้อความกลางจอ / คำแนะนำล่างจอ
+        public void SetPractice(bool on, string header = "")
+        {
+            balanceBar.gameObject.SetActive(!on);
+            stage.enabled = timer.enabled = sync.enabled = !on;
+            for (int i = 0; i < 2; i++) hint[i].enabled = hintEn[i].enabled = !on;
+            if (on) { treeFill.fillAmount = 0; percent.text = header; }
+        }
+
         public void SetGauges(float waterGauge, float sunGauge)
         {
             waterFill.fillAmount = waterGauge; sunFill.fillAmount = sunGauge;
@@ -136,7 +145,8 @@ namespace RTE
         {
             treeFill.fillAmount = growth;
             percent.text = $"{Mathf.FloorToInt(growth * 100)}%";
-            stage.text = growth < .3f ? "ระยะ 1 • ต้นอ่อน" : growth < .7f ? "ระยะ 2 • ต้นไม้กำลังโต" : growth < 1 ? "ระยะ 3 • ต้นไม้สมบูรณ์" : "โตเต็มที่!";
+            int k = TreeView.StageOf(growth);
+            stage.text = growth >= 1 ? "โตเต็มที่!" : $"ระดับ {k + 1} • {TreeView.StageName[k]}";
         }
 
         /// lean: -1 = น้ำมากไป, +1 = แสงมากไป, ratio = น้อย/มาก, multiplier = ผลต่อการโต

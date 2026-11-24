@@ -30,6 +30,10 @@ namespace RTE
             new TrashKind { Sprite = "t_battery", Name = "แบตเตอรี่เก่า",     Score = 50, Size = .8f },
         };
 
+        // ขยะช็อตไฟ (อีเวนต์ DANGER): ห้ามดูด ดูดแล้วโดนช็อต หักคะแนน
+        public static readonly TrashKind DangerKind = new TrashKind { Sprite = "t_board", Name = "แผงวงจรช็อตไฟ", Score = 0, Size = 1.1f };
+        public const int DangerPenalty = 20;
+
         public const int RareBonus = 30;      // ขยะพิเศษเรืองแสง
         public const float RareChance = .1f;  // โอกาสเกิดขยะพิเศษ 10%
 

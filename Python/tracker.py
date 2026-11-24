@@ -1,6 +1,7 @@
-# ไฟล์นี้: [Tracker] โปรแกรมหลัก: อ่านกล้อง -> YOLO pose -> ล็อคผู้เล่น 2 คน -> ส่งข้อมูลให้ Unity ทาง UDP
-#   รับคนเฉพาะระยะ 2–3 ม., ล็อคจนกว่าจะออกจากกล้อง, นับการย่ำเท้า, หน้าต่างพรีวิวกล้อง
-"""YOLO pose tracker for 2 players -> Unity (UDP JSON, 30 fps).
+# ไฟล์นี้: [Tracker] โปรแกรมหลัก: อ่านกล้อง -> YOLO (กรอบคน + ล็อคผู้เล่น 2 คน) -> MediaPipe (โครงกระดูก)
+#   -> ส่งข้อมูลให้ Unity ทาง UDP   รับคนเฉพาะระยะ 2–3 ม., ล็อคจนกว่าจะออกจากกล้อง, นับการย่ำเท้า, หน้าต่างพรีวิว
+"""2-player tracker -> Unity (UDP JSON, 30 fps).
+YOLO finds people (boxes) and locks P1/P2; MediaPipe Pose finds each player's skeleton inside their box.
 
 Run:  python tracker.py                 (Orbbec Gemini via pyorbbecsdk, falls back to UVC)
       python tracker.py --source 1      (OpenCV camera index)
@@ -16,6 +17,7 @@ import cv2
 from player_lock import PlayerLock
 from filters import OneEuro
 from gestures import estimate_distance, full_body_distance, StepDetector
+from skeleton_mp import MpSkeleton
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 # ▸ ไฟล์เก็บค่าคาลิเบรต (ขอบเขตมือ, ตัวคูณระยะ) และค่าเริ่มต้น
@@ -258,15 +260,19 @@ def main():
     ap.add_argument("--hfov", type=float, default=90.0, help="colour camera horizontal FOV (deg)")
     ap.add_argument("--seconds", type=float, default=0, help="auto-exit (for tests)")
     ap.add_argument("--conf", type=float, default=0.30, help="YOLO person confidence (lower keeps close-up / partly cut-off bodies)")
+    ap.add_argument("--mp-complexity", type=int, default=0, choices=(0, 1, 2), help="MediaPipe Pose model: 0 lite (fast, default), 1 full (more accurate, ~2x slower), 2 heavy")
     ap.add_argument("--lost-grace", type=float, default=1.5, help="seconds a locked player may be unseen before the slot is freed")
     ap.add_argument("--stall-s", type=float, default=4.0, help="reopen the camera after this many seconds without frames")
     args = ap.parse_args()
 
-    # ▸ เตรียมระบบ: โมเดลท่าทาง, ตัวติดตาม id, กล้อง, socket ส่ง/รับ, ตัวล็อคผู้เล่น, ตัวนับก้าว
-    from pose_onnx import PoseModel, IouTracker
-    model = PoseModel(args.model, conf=args.conf)
-    ids = IouTracker()
-    print(f"[yolo] {os.path.basename(args.model)} on {model.provider}")
+    # ▸ เตรียมระบบ: YOLO หากรอบคน, ตัวติดตาม id, MediaPipe โครงกระดูก, กล้อง, socket, ตัวล็อคผู้เล่น, ตัวนับก้าว
+    from yolo_detect import PersonDetector, IouTracker, AsyncDetector
+    model = PersonDetector(args.model, conf=args.conf)
+    yolo = AsyncDetector(model, IouTracker())      # YOLO on the GPU in its own thread, parallel to MediaPipe
+    print(f"[yolo] {os.path.basename(args.model)} on {model.provider} (person boxes only)")
+    skel = MpSkeleton(complexity=args.mp_complexity)
+    print(f"[mediapipe] pose model complexity {skel.complexity} ({'lite' if skel.complexity == 0 else 'full' if skel.complexity == 1 else 'heavy'})")
+    known = {}       # track id -> last skeleton {"kps", "kc", "t"} (players: every frame, others: round robin)
 
     cam = Camera(args.source, fps=int(args.fps))
     print(f"[camera] {cam.name}")
@@ -317,21 +323,57 @@ def main():
                 frame = cv2.flip(frame, 1)
             h, w = frame.shape[:2]
 
-            # ▸ ส่งภาพเข้า YOLO -> ได้คนทุกคน (กรอบ + จุดกระดูก 17 จุด) -> ใส่ id ต่อเนื่อง
-            #   แล้วประมาณระยะของแต่ละคนจากความกว้างไหล่/ความยาวลำตัว/ความสูงทั้งตัว
-            people = ids.update(model(frame))
+            # ▸ 1) YOLO (thread แยก): กรอบคนทุกคน + id ต่อเนื่อง (ไม่ใช้จุดกระดูกของ YOLO)
+            yolo.submit(frame)
+            _, people = yolo.latest()
+            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             focal = 0.5 * w / np.tan(np.radians(args.hfov) / 2)
-            for p in people:
-                raw = estimate_distance(p["kps"], p["kc"], w, focal)
-                fb = full_body_distance(p["kps"], p["kc"], focal)
+            now = time.monotonic()
+
+            # ▸ ระยะของแต่ละคน: คำนวณจากโครงกระดูก MediaPipe (ความกว้างไหล่ / ลำตัว / ทั้งตัว) แบบเดิม
+            def measure(p, kps, kc):
+                p["kps"], p["kc"] = kps, kc
+                raw = estimate_distance(kps, kc, w, focal)
+                fb = full_body_distance(kps, kc, focal)
                 if fb is not None:  # whole body visible: blend in the steadier full-height estimate
                     raw = fb if raw is None else 0.6 * fb + 0.4 * raw
                 p["raw_dist"] = raw
                 p["dist"] = None if raw is None else raw * calib.get("dist_scale", 1.0)
 
-            now = time.monotonic()
-            # ▸ เลือกว่าใครเป็น P1 / P2 (เข้าได้เฉพาะระยะ 2-3 ม. ล็อคจนออกจากกล้อง) คนอื่นไม่ใช้
+            # คนที่ยังไม่เป็นผู้เล่น: MediaPipe ทีละคนต่อเฟรม (วนกัน) เพื่อรู้ระยะ 2-3 ม. ก่อนรับเข้าเล่น
+            #   ทำเฉพาะตอนที่ยังมีช่องผู้เล่นว่าง (ครบ 2 คนแล้วไม่ต้องวัดคนอื่น = เร็วขึ้น)
+            player_ids = {lk.track_id for lk in lock.slots if lk.locked}
+            free_slot = any(not lk.locked for lk in lock.slots)
+            others = [p for p in people if free_slot and p["id"] not in player_ids
+                      and (p["box"][3] - p["box"][1]) >= lock.min_box_h]
+            for tid, (kps, kc) in skel.candidates(rgb, others, now).items():
+                known[tid] = {"kps": kps, "kc": kc, "t": now}
+            for p in people:
+                k = known.get(p["id"])
+                if k is not None and now - k["t"] < 0.6:
+                    measure(p, k["kps"], k["kc"])
+                else:
+                    p["kps"] = p["kc"] = None
+                    p["raw_dist"] = p["dist"] = None
+
+            # ▸ 2) เลือกว่าใครเป็น P1 / P2 (เข้าได้เฉพาะระยะ 2-3 ม. ล็อคจนออกจากกล้อง) คนอื่นไม่ใช้
             assigned = lock.update(people, now)
+
+            # ▸ 3) MediaPipe: โครงกระดูกของผู้เล่นทั้งสอง (ทุกเฟรม พร้อมกัน 2 thread)
+            #      หาไม่เจอชั่วครู่ -> ใช้ของเดิมไม่เกิน 0.3 วินาที
+            for s, res in skel.players(rgb, assigned).items():
+                p = assigned[s]
+                if p is None:
+                    continue
+                if res is not None:
+                    known[p["id"]] = {"kps": res[0], "kc": res[1], "t": now}
+                    measure(p, *res)
+                elif p["id"] in known and now - known[p["id"]]["t"] < 0.3:
+                    measure(p, known[p["id"]]["kps"], known[p["id"]]["kc"])
+                else:
+                    p["kps"] = p["kc"] = None
+            alive = {p["id"] for p in people}
+            known = {k: v for k, v in known.items() if k in alive}
 
             # 1 m distance calibration: everyone tracked stands at 1.0 m for 2 s
             # ▸ คาลิเบรตระยะ: เก็บระยะดิบ 2 วินาทีตอนยืนที่ 1 ม. แล้วคำนวณตัวคูณ dist_scale
@@ -369,11 +411,15 @@ def main():
                     if slot_tid[s] == -1:
                         steps[s].reset()
                     slot_tid[s] = p["id"]
+                    entry["dist"] = -1.0 if p.get("dist") is None else round(p["dist"], 2)
+                    if p.get("kps") is None:      # locked by YOLO but no skeleton this moment
+                        entry["steps"] = steps[s].steps
+                        out.append(entry)
+                        continue
                     steps[s](p["kps"], p["kc"], now)
                     entry["steps"] = steps[s].steps
                     entry["kp"] = [round(float(v), 3) for i in range(17)
                                    for v in (p["kps"][i][0] / w, p["kps"][i][1] / h, p["kc"][i])]
-                    entry["dist"] = -1.0 if p["dist"] is None else round(p["dist"], 2)
                     hands = both_hands(p["kps"], p["kc"])
                     # active hand: the raised one; if both are raised keep the current one (no flicker)
                     up = [sd for sd in (0, 1) if hands[sd] is not None and hands[sd][3]]
@@ -422,6 +468,9 @@ def main():
             fps_n += 1
             if time.perf_counter() - fps_t >= 1.0:
                 fps_s, fps_n, fps_t = fps_n / (time.perf_counter() - fps_t), 0, time.perf_counter()
+                if args.no_show and int(time.perf_counter() - t_start) % 5 == 0:
+                    print(f"[tracker] {fps_s:4.1f} fps  yolo {yolo.ms:.0f} ms  people {len(people)}  "
+                          f"P1 {'in' if assigned[1] else '-'}  P2 {'in' if assigned[2] else '-'}")
 
             # ▸ ส่ง JSON ทั้งหมดไปที่ Unity ทาง UDP (127.0.0.1:5065)
             msg = {"t": round(time.time(), 3), "fps": round(fps_s, 1),
@@ -451,11 +500,12 @@ def main():
                         continue
                     x0, y0, x1, y1 = (np.array(p["box"]) * [w, h, w, h]).astype(int)
                     cv2.rectangle(vis, (x0, y0), (x1, y1), col, 2)
-                    draw_skeleton(vis, p["kps"], p["kc"], col)
+                    if p.get("kps") is not None:
+                        draw_skeleton(vis, p["kps"], p["kc"], col)
                     cv2.putText(vis, f"P{s} id{p['id']} {steps[s].rate(now):.1f} st/s {'LRN'[active[s]]}-hand", (x0, max(20, y0 - 8)), cv2.FONT_HERSHEY_SIMPLEX, 0.8, col, 2)
                     if "wrist" in p:
                         cv2.circle(vis, tuple(p["wrist"].astype(int)), 12, col, -1)
-                status = f"{fps_s:4.1f} fps  {cam.name}"
+                status = f"{fps_s:4.1f} fps  {cam.name}  YOLO+MediaPipe"
                 if calib_rec is not None:
                     status += f"  CALIBRATING {calibrating_until - now:3.1f}s - sweep hand to every corner"
                 cv2.putText(vis, status, (10, 28), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
@@ -496,6 +546,8 @@ def main():
                 cv2.waitKey(1)   # keep the preview window responsive (otherwise Windows shows "Not Responding")
 
     cam.close()
+    yolo.close()
+    skel.close()
     sock.close()
     cv2.destroyAllWindows()
 

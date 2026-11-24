@@ -1,6 +1,9 @@
-# Tracker (กล้อง + YOLO pose)
+# Tracker (กล้อง + YOLO หาตัวผู้เล่น + MediaPipe จับโครงกระดูก) — Python 3.11
 numpy==1.26.4
+# mediapipe ใช้ opencv-contrib-python, pyorbbecsdk2 ใช้ opencv-python — ต้องเป็นเวอร์ชันเดียวกันจึงใช้ cv2 ร่วมกันได้
 opencv-python==4.11.0.86
+opencv-contrib-python==4.11.0.86
+mediapipe==0.10.21
 onnxruntime-directml==1.24.4
 pygrabber==0.2
 pyorbbecsdk2==2.1.3

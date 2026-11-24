@@ -1,5 +1,5 @@
 # ไฟล์นี้: [Tracker] คำนวณจากโครงร่างกาย: ประมาณระยะห่างจากกล้อง (ไหล่ / ลำตัว / ทั้งตัว) และตัวนับการย่ำเท้า
-"""Distance estimate + step counter from YOLO keypoints (COCO-17)."""
+"""Distance estimate + step counter from COCO-17 keypoints (now from MediaPipe, see skeleton_mp.py)."""
 import numpy as np
 
 NOSE, LS, RS, LE, RE, LW, RW, LH, RH = 0, 5, 6, 7, 8, 9, 10, 11, 12

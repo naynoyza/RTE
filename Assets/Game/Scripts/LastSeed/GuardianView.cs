@@ -1,13 +1,14 @@
 // =====================================================================================================
 // GuardianView — มือชุดอวกาศ + เอฟเฟกต์พลังของผู้เล่น 1 คน (P1 = Water Guardian ซ้าย, P2 = Sun Guardian ขวา)
 // -----------------------------------------------------------------------------------------------------
-// แขน   : ภาพจาก Ref/25 (ท่าชูแขน, มือเรืองแสงสีของตัวเอง) และ Ref/26 (ท่าผลัก)
+// แขน   : ภาพจาก Ref/25 (ท่าชูแขน, มือเรืองแสงสีของตัวเอง) และ Ref/27 (ท่าผลัก/ยกฝ่ามือ แทน Ref/26)
 //          สลับภาพแบบจางเข้า-ออกตามท่า, ไม่ทำท่า = แขนลดลงด้านล่าง, ขยับตามตำแหน่งมือจริงเล็กน้อย
 // สะสมพลัง (ท่า V) — แทนภาพนิ่ง Ref/20, 22 ด้วย Particle ที่เคลื่อนไหวจริง:
 //    น้ำ : ละอองน้ำลอยขึ้นจากพื้นวนขึ้นไปรวม + ลูกบอลน้ำวน (เกลียวหมุนสวนกัน 2 ชั้น) + หยดน้ำโคจรรอบลูกบอล
 //    แสง : ลำแสงพุ่งลงจากฟ้าเข้าหามือ + ดวงอาทิตย์ (รัศมีหมุน + แกนสว่างเต้นเป็นจังหวะ) + ประกายโคจร
 // ส่งพลัง (ท่าผลัก) — แทนภาพนิ่ง Ref/21, 23:
-//    สายน้ำ/ลำแสงเป็น LineRenderer โค้งจากฝ่ามือไปที่ต้นไม้ texture เลื่อนไหลตลอด + คลื่นส่าย
+//    สายน้ำ/ลำแสงเป็น LineRenderer โค้งจากฝ่ามือไปที่ต้นไม้ (ลาย Ref/28 น้ำสาด, Ref/29 ลำแสงดาวหาง) เลื่อนไหลตลอด
+//    + หัวสาย = ภาพ Ref/28/29 ทั้งภาพ หมุนตามทิศทาง + แสงฟุ้งที่ฝ่ามือ + แสงกระทบที่ต้นไม้เมื่อถึง
 //    + หยดน้ำ/ประกายหลุดออกตามเส้น ; ปลายสายวิ่งไปถึงต้นไม้ใน StreamTravelSeconds (Arrived = ถึงแล้ว)
 //    หยุดผลัก -> หางสายไหลตามเข้าไปในต้นไม้จนหมด (ไม่หายวูบ)
 // =====================================================================================================
@@ -28,6 +29,9 @@ namespace RTE
         readonly SpriteRenderer orbA, orbB, orbGlow;
         readonly ParticleSystem rise, orbit, along;
         readonly LineRenderer body, core;
+        readonly SpriteRenderer headFx, palmGlow, impact;
+        readonly float headAngle;
+        float impactA;
         readonly Vector3[] pts;
         float wCharge, wPush, alpha = 1, orbSize, head, tail, spin;
         bool sending;
@@ -91,19 +95,30 @@ namespace RTE
             // ---------------- สายน้ำ / ลำแสง ไปที่ต้นไม้
             if (water)
             {
-                body = SeedKit.Line("WaterStream", root, "fx_water_strip", false, SeedKit.OrderStream, new Color(.7f, .92f, 1f, .95f), 1.6f);
-                core = SeedKit.Line("WaterShine", root, "fx_water_strip", true, SeedKit.OrderStream + 1, new Color(.6f, .9f, 1f, .55f), 2.6f);
+                body = SeedKit.Line("WaterStream", root, "fx_water_strip2", true, SeedKit.OrderStream, new Color(1f, 1f, 1f, 1f), 1.8f);
+                core = SeedKit.Line("WaterShine", root, "fx_water_strip", true, SeedKit.OrderStream + 1, new Color(.5f, .85f, 1f, .45f), 2.6f);
                 body.widthCurve = new AnimationCurve(new Keyframe(0, 1.15f), new Keyframe(.5f, .8f), new Keyframe(1, .55f));
                 core.widthCurve = new AnimationCurve(new Keyframe(0, .5f), new Keyframe(1, .25f));
             }
             else
             {
-                body = SeedKit.Line("SunBeam", root, "fx_beam_strip", true, SeedKit.OrderStream, new Color(1f, .8f, .35f, .9f), 2.2f);
+                body = SeedKit.Line("SunBeam", root, "fx_beam_strip2", true, SeedKit.OrderStream, new Color(1f, .95f, .8f, 1f), 2.4f);
                 core = SeedKit.Line("SunCore", root, "fx_beam_strip", true, SeedKit.OrderStream + 1, new Color(1f, 1f, .85f, .8f), 3.4f);
                 body.widthCurve = new AnimationCurve(new Keyframe(0, 2.2f), new Keyframe(1, .9f));
                 core.widthCurve = new AnimationCurve(new Keyframe(0, .7f), new Keyframe(1, .3f));
             }
             pts = new Vector3[body.positionCount];
+
+            // หัวสาย (ภาพเต็มจาก Ref/28, 29) — pivot = จุดหัวในภาพ, headAngle = ทิศทางของภาพ (องศา)
+            headFx = SeedKit.MakeSprite("StreamHead", root,
+                SeedKit.Spr(water ? "fx_water_head" : "fx_sun_head", water ? new Vector2(.91f, .12f) : new Vector2(.13f, .15f), water ? 260 : 240),
+                SeedKit.OrderStream + 3, true);
+            headAngle = water ? -32.6f : -147.8f;
+            headFx.color = Color.clear;
+            palmGlow = SeedKit.MakeSprite("PalmGlow", root, SeedKit.Spr("fx_soft", new Vector2(.5f, .5f), 40), SeedKit.OrderHandFx - 2, true);
+            palmGlow.color = Color.clear;
+            impact = SeedKit.MakeSprite("Impact", root, SeedKit.Spr("fx_soft", new Vector2(.5f, .5f), 40), SeedKit.OrderTreeFx + 3, true);
+            impact.color = Color.clear;
             along = SeedKit.Particles("Along", root, water ? "fx_drop" : "fx_spark", true, SeedKit.OrderStream + 2, .7f, water ? .2f : .28f, 0,
                                      water ? new Color(.8f, .96f, 1f) : new Color(1f, .92f, .55f), 500);
         }
@@ -112,6 +127,7 @@ namespace RTE
         {
             sending = false; head = tail = 0; orbSize = 0; wCharge = 0; wPush = 0; offset = Vector3.zero;
             body.enabled = core.enabled = false;
+            headFx.color = palmGlow.color = impact.color = Color.clear; impactA = 0;
         }
 
         public void Tick(SeedPose pose, float gauge, bool send, Vector2 reach, bool lost, float dt)
@@ -170,11 +186,30 @@ namespace RTE
         {
             bool visible = head > tail + .01f;
             body.enabled = core.enabled = visible;
-            if (!visible) return;
+            var tint = water ? SeedSettings.Water : SeedSettings.Sun;
+
+            // แสงกระทบต้นไม้: สว่างขึ้นเมื่อสายถึงต้น ค่อย ๆ จางเมื่อหยุด
+            impactA = SeedKit.Damp(impactA, Arrived ? 1 : 0, Arrived ? 10 : 3, dt);
+            impact.transform.position = TreeView.Target + new Vector3(water ? -.25f : .25f, 0, 0);
+            impact.transform.localScale = Vector3.one * (2.2f + .5f * Mathf.Sin(Time.time * 18));
+            impact.color = new Color(tint.r, tint.g, tint.b, .9f * impactA);
+            palmGlow.transform.position = orbPos;
+            palmGlow.transform.localScale = Vector3.one * (2.4f + .3f * Mathf.Sin(Time.time * 12));
+            palmGlow.color = new Color(tint.r, tint.g, tint.b, visible && sending ? .85f : 0);
+
+            if (!visible) { headFx.color = Color.clear; return; }
             Vector3 from = orbPos;
             for (int i = 0; i < pts.Length; i++)
                 pts[i] = Curve(Mathf.Lerp(tail, head, i / (pts.Length - 1f)), from);
             body.SetPositions(pts); core.SetPositions(pts);
+
+            // หัวสาย: อยู่ที่ปลาย หมุนตามทิศสาย ขนาด/ความสว่างกระเพื่อม
+            var hp = pts[pts.Length - 1]; var hd = hp - pts[pts.Length - 3];
+            headFx.transform.position = hp;
+            headFx.transform.rotation = Quaternion.Euler(0, 0, Mathf.Atan2(hd.y, hd.x) * Mathf.Rad2Deg - headAngle);
+            float hs = (water ? .8f : .9f) + .08f * Mathf.Sin(Time.time * (water ? 13 : 9));
+            headFx.transform.localScale = new Vector3(hs, hs * (1 + .1f * Mathf.Sin(Time.time * 7)), 1);
+            headFx.color = new Color(1, 1, 1, Mathf.Clamp01((head - tail) * 3) * (water ? 1f : .95f));
 
             // หยดน้ำ/ประกาย หลุดออกตามเส้น
             int n = Mathf.RoundToInt((water ? 70 : 50) * dt * 1.0f + Random.value);

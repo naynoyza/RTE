@@ -24,6 +24,7 @@ namespace RTE
         readonly Image[] progress = new Image[2];
         readonly Text[] pLabel = new Text[2];
         readonly ModelStage[] stages = new ModelStage[2];
+        readonly RingFx[] ringFx = new RingFx[2];
         readonly float[] hold = new float[2];
         readonly Vector2[] feetSpot = new Vector2[2];   // จุดกลางวงกลมที่เท้าตัวละครต้องเหยียบ (พิกัด UI)
         const float ModelH = 1000f;
@@ -78,8 +79,11 @@ namespace RTE
                 float x = i == 0 ? -700 : 700;
                 var ring = UIKit.Img($"Ring{i + 1}", zoomLayer, UIKit.Load(i == 0 ? "intro/ring_pink" : "intro/ring_cyan"), new Vector2(560, 317), true);
                 ring.rectTransform.anchoredPosition = new Vector2(x, -360);
-                stages[i] = new ModelStage(zoomLayer, i, new Vector2(ModelH * .58f, ModelH));
                 feetSpot[i] = new Vector2(x + (i == 0 ? -15 : 8), -422);          // กลางวงในของรูปวงกลม
+                var fxBack = UIKit.Rect($"RingFxBack{i + 1}", zoomLayer); UIKit.Stretch(fxBack);
+                stages[i] = new ModelStage(zoomLayer, i, new Vector2(ModelH * .58f, ModelH));
+                var fxFront = UIKit.Rect($"RingFxFront{i + 1}", zoomLayer); UIKit.Stretch(fxFront);
+                ringFx[i] = new RingFx(fxBack, fxFront, feetSpot[i], PColor(i));
                 PlaceModel(i);
 
                 progress[i] = UIKit.Img($"Progress{i + 1}", zoomLayer, UIKit.Load("fx_ring"), new Vector2(150, 150), false);
@@ -116,7 +120,7 @@ namespace RTE
         public Result Tick(TrackedPlayer[] players, bool online, bool skip)
         {
             float dt = Time.deltaTime;
-            for (int i = 0; i < 2; i++) { stages[i].Tick(); PlaceModel(i); }
+            for (int i = 0; i < 2; i++) { stages[i].Tick(); PlaceModel(i); ringFx[i].Tick(hold[i] / HoldSeconds, GameSession.Heroes[i] != Hero.None); }
 
             if (phase == 0)
             {
@@ -177,7 +181,7 @@ namespace RTE
             if (hold[i] >= HoldSeconds) Pick(i, want);
         }
 
-        public void DebugPick(int only = -1) { for (int i = 0; i < 2; i++) if (only < 0 || only == i) stages[i].Set(GameSession.Heroes[i]); }
+        public void DebugPick(int only = -1) { for (int i = 0; i < 2; i++) if (only < 0 || only == i) { stages[i].Set(GameSession.Heroes[i]); ringFx[i].Burst(); } }
 
         // เลื่อนภาพโมเดลให้ "เท้า" ตรงกับกลางวงกลมพอดี
         void PlaceModel(int i)
@@ -190,6 +194,7 @@ namespace RTE
         {
             GameSession.Heroes[i] = h;
             stages[i].Set(h);
+            ringFx[i].Burst();
             hold[i] = 0;
         }
 

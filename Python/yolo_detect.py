@@ -1,5 +1,8 @@
-# ไฟล์นี้: [Tracker] รัน YOLOv8-pose ด้วย onnxruntime (GPU ผ่าน DirectML) + ตัวติดตาม id คนแบบ IoU
-"""YOLOv8/11-pose inference with onnxruntime (no torch needed) + a light IoU tracker."""
+# ไฟล์นี้: [Tracker] YOLO หา "กรอบคน" ด้วย onnxruntime (GPU ผ่าน DirectML) + ตัวติดตาม id คนแบบ IoU
+#   ใช้แค่ตำแหน่ง/กรอบของคนเพื่อล็อค P1/P2 — จุดกระดูกมาจาก MediaPipe (skeleton_mp.py) ไม่ใช้ของ YOLO
+"""YOLOv8/11 person detection with onnxruntime (no torch needed) + a light IoU tracker.
+Works with a pose model (yolov8n-pose.onnx, 56 channels) or a detection model (84 channels):
+in both, channel 4 is the person score. Keypoints of the pose model are ignored."""
 import os
 import numpy as np
 import cv2
@@ -8,8 +11,8 @@ import onnxruntime as ort
 from player_lock import iou
 
 
-# ▸ โมเดล YOLOv8-pose: รับภาพ คืนรายการคน (กรอบ, คะแนน, จุดกระดูก 17 จุด + ความมั่นใจ)
-class PoseModel:
+# ▸ โมเดล YOLO: รับภาพ คืนรายการคน (กรอบ + คะแนน)
+class PersonDetector:
     def __init__(self, path, conf=0.45, nms=0.5):
         opts = ort.SessionOptions()
         opts.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
@@ -50,7 +53,7 @@ class PoseModel:
         return best[0], f"{best[1]} ({best[2]:.1f} ms)"
 
     # ▸ ย่อภาพลงกรอบ 640x640 (เติมขอบเทา) -> รันโมเดล -> คัดคนที่คะแนนเกิน conf ->
-    #   ตัดกรอบซ้อนกัน (NMS) -> แปลงกรอบและจุดกระดูกกลับเป็นพิกัดภาพจริง
+    #   ตัดกรอบซ้อนกัน (NMS) -> แปลงกรอบกลับเป็นพิกัดภาพจริง (0..1)
     def __call__(self, bgr):
         h, w = bgr.shape[:2]
         s = self.size / max(h, w)
@@ -59,7 +62,7 @@ class PoseModel:
         canvas = np.full((self.size, self.size, 3), 114, np.uint8)
         canvas[py:py + nh, px:px + nw] = cv2.resize(bgr, (nw, nh), interpolation=cv2.INTER_LINEAR)
         blob = canvas[:, :, ::-1].transpose(2, 0, 1)[None].astype(np.float32) / 255.0
-        out = self.sess.run(None, {self.inp: blob})[0][0].T  # (8400, 56)
+        out = self.sess.run(None, {self.inp: blob})[0][0].T  # (8400, 56 pose | 84 detect); [:, 4] = person
         scores = out[:, 4]
         keep = scores > self.conf
         out, scores = out[keep], scores[keep]
@@ -73,12 +76,9 @@ class PoseModel:
         idx = np.array(idx).flatten() if len(idx) else []
         people = []
         for i in idx:
-            kp = out[i, 5:].reshape(17, 3)
-            kxy = np.stack([(kp[:, 0] - px) / s, (kp[:, 1] - py) / s], 1)
             bx, by, bww, bhh = rects[i]
             box = (max(0, bx / w), max(0, by / h), min(1, (bx + bww) / w), min(1, (by + bhh) / h))
-            people.append({"box": tuple(float(v) for v in box), "score": float(scores[i]),
-                           "kps": kxy, "kc": kp[:, 2]})
+            people.append({"box": tuple(float(v) for v in box), "score": float(scores[i])})
         return people
 
 
@@ -120,3 +120,49 @@ class IouTracker:
                 self.tracks[self.next_id] = (p["box"], 0)
                 self.next_id += 1
         return people
+
+
+# ▸ รัน YOLO ใน thread แยก (บนการ์ดจอ) ขนานกับ MediaPipe (บน CPU) — เฟรมหลักไม่ต้องรอ YOLO
+#   ส่งภาพล่าสุดเข้าไปด้วย submit() แล้วอ่านผลล่าสุด (กรอบ + id) ด้วย latest()
+#   กรอบช้ากว่าภาพปัจจุบันไม่เกิน 1 รอบ YOLO — MediaPipe ตัดภาพแบบเผื่อขอบไว้แล้วจึงไม่หลุด
+class AsyncDetector:
+    def __init__(self, detector, tracker):
+        import threading
+        self.det, self.trk = detector, tracker
+        self.lock = threading.Lock()
+        self.event = threading.Event()
+        self.pending, self.people, self.seq, self.ms = None, [], 0, 0.0
+        self.ok = True
+        threading.Thread(target=self._loop, daemon=True).start()
+
+    def submit(self, frame):
+        with self.lock:
+            self.pending = frame
+        self.event.set()
+
+    def latest(self):
+        with self.lock:
+            return self.seq, [dict(p) for p in self.people]
+
+    def _loop(self):
+        import time
+        while self.ok:
+            if not self.event.wait(0.2):
+                continue
+            self.event.clear()
+            with self.lock:
+                frame, self.pending = self.pending, None
+            if frame is None:
+                continue
+            t = time.perf_counter()
+            try:
+                people = self.trk.update(self.det(frame))
+            except Exception as e:
+                print(f"[yolo] frame error: {e}")
+                continue
+            with self.lock:
+                self.people, self.seq = people, self.seq + 1
+                self.ms = (time.perf_counter() - t) * 1000
+
+    def close(self):
+        self.ok = False

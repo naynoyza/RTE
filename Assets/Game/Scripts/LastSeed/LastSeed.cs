@@ -1,7 +1,10 @@
 // =====================================================================================================
 // LastSeed — ตัวควบคุมเกมภารกิจที่ 2 THE LAST SEED (ใส่ไว้ที่ GameObject "Game" ในฉาก The Last Seed)
 // -----------------------------------------------------------------------------------------------------
-//   Tutorial (สอนเล่น: ยกมือค้าง 3 วิ / 20 วิ / Space) ──> Countdown 3-2-1-GO! ──> Play ──(ต้นไม้ 100% / หมดเวลา)──> Result ──> Tutorial
+// มาจากเกม 1 (GameSession.Active): เฝ้าผู้เล่นต่อ หลุดนาน/จบเกม -> กลับหน้าปก (ฉาก WasteHunters)
+//   Practice (สอนเล่นซ้อนบนฉากจริง 2 สเต็ป: ชูแขน V จนเกจเต็มทั้งคู่ -> ผลักฝ่ามือพร้อมกัน / 15 วิ / Space)
+//     ──> Countdown 3-2-1-GO! ──> Play ──(ต้นไม้ 100% / หมดเวลา)──> Result ──> Practice
+//   ต้นไม้ 4 ระดับ: ต้นอ่อน 0–25% • ต้นกล้า 25–50% • ต้นไม้วัยรุ่น 50–75% • โตเต็มวัย 75–100%
 //
 // วิธีเล่น (ทั้งสองคนใช้ท่าเดียวกัน แต่ได้พลังคนละชนิด: P1 ซ้าย = น้ำ, P2 ขวา = แสงแดด)
 //   1) ชูแขนเป็นตัว V ค้างไว้  -> เกจของตัวเองเพิ่ม (เต็ม = "พร้อมส่ง!")
@@ -23,7 +26,7 @@ namespace RTE
     {
         public SeedSettings Settings = new SeedSettings();
 
-        enum State { Tutorial, Countdown, Play, Finale, Result }
+        enum State { Practice, Countdown, Play, Finale, Result }
         State state;
 
         // โลก 2D
@@ -36,7 +39,10 @@ namespace RTE
         GameObject canvasGo;
         SeedHud hud;
         CenterOverlay overlay;
-        TutorialScreen tutorial;
+        SeedPractice practice;
+        int practiceStep; float practiceTime, practiceEndT = -1;
+        readonly bool[] practiceArrived = new bool[2];
+        PresenceGuard guard;
         Text debugText;
         bool showDebug, autoplay;
         readonly bool[] botSending = new bool[2];
@@ -65,11 +71,13 @@ namespace RTE
             BuildUI();
         }
 
-        void Start() => GoTutorial();
+        void Start() => GoPractice();
 
         // ใช้ทดสอบจาก Editor: ดูสถานะ / ไปหน้าสอน / เปิดบอตเล่นเอง
         public string StateName => state.ToString();
-        public void DebugTutorial() => GoTutorial();
+        public void DebugTutorial() => GoPractice();
+        public int PracticeStep => practiceStep;
+        public void DebugGrowth(float g) { state = State.Play; StopAllCoroutines(); practice.Hide(); hud.SetPractice(false); growth = g; timeLeft = 999; }
         public void DebugAutoplay() { autoplay = true; }
 
         void BuildWorld()
@@ -99,9 +107,8 @@ namespace RTE
 
             hud = new SeedHud(canvas);
             overlay = new CenterOverlay(canvas);
-            tutorial = new TutorialScreen(canvas, "GAME 02", "THE LAST SEED", "ปลูกต้นไม้ด้วยพลังทีม", "ชูแขนตัว V + ผลักฝ่ามือ",
-                new[] { "ชูแขนเป็นตัว V ค้างไว้ = เก็บพลัง", "ผลักฝ่ามือไปข้างหน้า = ส่งพลังให้ต้นไม้", "P1 ส่งน้ำ  •  P2 ส่งแสงแดด ให้สมดุลกัน", "ส่งพร้อมกัน = PERFECT SYNC โตเร็ว!" },
-                "ชูแขน V  ▶  ผลักมือ", "tut/g2", "seed/bg");
+            practice = new SeedPractice(canvas);
+            guard = new PresenceGuard(canvas);
             debugText = UIKit.Label("Debug", canvas, "", 22, Color.yellow, TextAnchor.LowerCenter);
             UIKit.Anchor(debugText.rectTransform, new Vector2(.5f, 0), new Vector2(0, 6));
         }
@@ -121,19 +128,23 @@ namespace RTE
             hud.SetGauges(0, 0); hud.SetGrowth(0); hud.SetTime(timeLeft); hud.SetSync(false, false, 1);
         }
 
-        void GoTutorial()
+        // สอนเล่นซ้อนบนฉากจริง: แขน 3D และเกจน้ำ/แสงทำงานจริง แต่ต้นไม้ไม่โต
+        void GoPractice()
         {
             StopAllCoroutines();
-            state = State.Tutorial;
+            state = State.Practice;
             ResetRound();
-            hud.Root.SetActive(false); overlay.Hide();
-            tutorial.Show();
+            hud.Root.SetActive(true); overlay.Hide();
+            hud.SetPractice(true, "HOW TO PLAY • 15s");
+            practiceStep = 1; practiceTime = 0; practiceEndT = -1;
+            practiceArrived[0] = practiceArrived[1] = false;
+            practice.Show();
         }
 
         IEnumerator CountdownThenPlay()
         {
             state = State.Countdown;
-            tutorial.Hide(); hud.Root.SetActive(true);
+            practice.Hide(); hud.Root.SetActive(true); hud.SetPractice(false);
             ResetRound();
             for (int i = 0; i < 2; i++)
                 hud.SetHint(i, "เตรียมตัว...", i == 0 ? "Water Guardian" : "Sun Guardian", i == 0 ? SeedSettings.Water : SeedSettings.Sun);
@@ -166,7 +177,8 @@ namespace RTE
                 $"ส่งพร้อมกัน {syncPct * 100:0}% ของเวลา   •   PERFECT SYNC {perfectSyncs} ครั้ง" +
                 (grown ? $"   •   ใช้เวลา {playTime:0} วินาที" : ""));
             yield return new WaitForSeconds(Settings.ResultSeconds);
-            GoTutorial();
+            if (GameSession.Active) GameSession.BackToCover();   // จบชุดภารกิจ วนกลับหน้าปก
+            else GoPractice();
         }
 
         // ================================================================== ทุกเฟรม
@@ -183,12 +195,11 @@ namespace RTE
                 if (keys.escapeKey.wasPressedThisFrame) Application.Quit();
                 if (keys.f1Key.wasPressedThisFrame) showDebug = !showDebug;
                 if (keys.f2Key.wasPressedThisFrame) autoplay = !autoplay;
-                if (keys.rKey.wasPressedThisFrame) GoTutorial();
+                if (keys.rKey.wasPressedThisFrame) GoPractice();
             }
 
-            if (state == State.Tutorial && tutorial.Tick(players, online, skip)) StartCoroutine(CountdownThenPlay());
-
-            if (autoplay && state == State.Tutorial) StartCoroutine(CountdownThenPlay());
+            if (guard.Tick(players, online)) { GameSession.BackToCover(); return; }
+            if (state == State.Practice && skip) StartCoroutine(CountdownThenPlay());
             Autoplay();
 
             bool playing = state == State.Play;
@@ -197,14 +208,17 @@ namespace RTE
             {
                 var pose = poses[i].Tick(players[i], online, dt);
                 bool lost = poses[i].Lost;
-                if (playing && !lost)
+                bool practicing = state == State.Practice;
+                if ((playing || practicing) && !lost)
                 {
-                    if (pose == SeedPose.Charge) gauge[i] = Mathf.Min(1, gauge[i] + Settings.ChargePerSecond * dt);
-                    sending[i] = pose == SeedPose.Push && gauge[i] > 0;
+                    // ช่วงซ้อมชาร์จเร็วกว่าเกมจริง (~1.5 วิ เต็ม) และส่งได้เฉพาะสเต็ป 2
+                    float rate = practicing ? 1f / SeedPractice.ChargeSeconds : Settings.ChargePerSecond;
+                    if (pose == SeedPose.Charge) gauge[i] = Mathf.Min(1, gauge[i] + rate * dt);
+                    sending[i] = pose == SeedPose.Push && gauge[i] > 0 && (playing || practiceStep == 2);
                 }
                 if (sending[i] && !wasSending[i]) { sendStart[i] = Time.time; sends[i]++; }
                 wasSending[i] = sending[i];
-                guardians[i].Tick(state == State.Tutorial ? SeedPose.None : pose, gauge[i], sending[i], poses[i].Reach, lost, dt);
+                guardians[i].Tick(pose, gauge[i], sending[i], poses[i].Reach, lost, dt);
             }
 
             // ---------------- พลังที่ถึงต้นไม้ -> การเติบโต
@@ -243,11 +257,11 @@ namespace RTE
                     }
 
                 growth = Mathf.Clamp01(growth);
-                int stage = growth >= .7f ? 2 : growth >= .3f ? 1 : 0;
+                int stage = TreeView.StageOf(growth);
                 if (stage > stageShown)
                 {
                     stageShown = stage; tree.Burst(90);
-                    hud.Popup(stage == 1 ? "ต้นไม้กำลังโต!" : "ต้นไม้ใกล้สมบูรณ์!");
+                    hud.Popup($"ระดับ {stage + 1} • {TreeView.StageName[stage]}!");
                 }
 
                 timeLeft -= dt;
@@ -261,7 +275,14 @@ namespace RTE
             greenery.color = new Color(.55f, 1f, .55f, green * .45f);
             background.color = Color.Lerp(Color.white, new Color(.9f, 1f, .9f), green);
 
-            if (state != State.Tutorial)
+            if (state == State.Practice)
+            {
+                TickPractice(dt);
+                hud.SetGauges(gauge[0], gauge[1]);
+                for (int i = 0; i < 2; i++) hud.SetSkeleton(i, online && players[i].present ? players[i].kp : null, dt);
+                hud.Tick(dt);
+            }
+            else
             {
                 hud.SetGauges(gauge[0], gauge[1]);
                 hud.SetGrowth(growth);
@@ -279,12 +300,49 @@ namespace RTE
                 $"growth {growth:0.000} bal {ratio:0.00} | {state}";
         }
 
+        // ================================================================== สอนเล่น 2 สเต็ป
+        void TickPractice(float dt)
+        {
+            practiceTime += dt;
+            hud.SetPractice(true, $"HOW TO PLAY • {Mathf.Max(0, Mathf.CeilToInt(SeedPractice.MaxSeconds - practiceTime))}s");
+            bool[] ready = { gauge[0] >= 1, gauge[1] >= 1 };
+            if (practiceStep == 1 && ready[0] && ready[1])
+            {
+                practiceStep = 2;
+                practice.Flash("ผลักฝ่ามือพร้อมกัน!", new Color(1f, .85f, .35f));
+            }
+            if (practiceStep == 2)
+                for (int i = 0; i < 2; i++) practiceArrived[i] |= guardians[i].Arrived;
+
+            // ส่งถึงต้นอ่อนทั้งคู่ -> PERFECT SYNC! แล้วพับหน้าต่างเข้าเกม
+            if (practiceEndT < 0 && practiceArrived[0] && practiceArrived[1])
+            {
+                practiceEndT = 0;
+                practice.Flash("PERFECT SYNC!  พร้อมลุย!", new Color(.45f, 1f, .5f));
+                tree.Burst(90);
+            }
+            if (practiceEndT >= 0) practiceEndT += dt;
+
+            var pose = new[] { poses[0].Pose, poses[1].Pose };
+            var lost = new[] { poses[0].Lost, poses[1].Lost };
+            practice.Tick(practiceStep, ready, practiceArrived, pose, lost, practiceEndT > .9f);
+
+            if (practiceEndT > 1.5f || (practiceEndT < 0 && practiceTime >= SeedPractice.MaxSeconds))
+                StartCoroutine(CountdownThenPlay());
+        }
+
         // Auto-play: ชาร์จจนเต็ม -> รอเพื่อนเต็ม -> ผลักพร้อมกัน (P2 ช้ากว่า 0.3 วิ = PERFECT SYNC) จนเกจหมด
         //            P1 ชาร์จเร็วกว่า P2 เล็กน้อยโดยธรรมชาติของจังหวะ ทำให้เห็นทั้งช่วง "ส่งคนเดียว" และ "ส่งพร้อมกัน"
         void Autoplay()
         {
             for (int i = 0; i < 2; i++)
             {
+                if (autoplay && state == State.Practice)                  // ซ้อม: ชูแขนจนเต็มทั้งคู่ แล้วผลัก (P2 ช้ากว่าเล็กน้อย)
+                {
+                    poses[i].Forced = practiceStep == 1 ? (gauge[i] >= 1 ? SeedPose.None : SeedPose.Charge)
+                                    : (i == 0 || practiceTime % 1f > .3f ? SeedPose.Push : SeedPose.None);
+                    continue;
+                }
                 if (!autoplay || state != State.Play) { poses[i].Forced = SeedPose.None; botSending[i] = false; continue; }
                 if (botSending[i] && gauge[i] <= 0) botSending[i] = false;
                 bool bothFull = gauge[0] >= 1 && gauge[1] >= 1;

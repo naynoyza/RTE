@@ -46,3 +46,6 @@ Python/Log/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# ค่าคาลิเบรตกล้องของแต่ละเครื่อง (กด C/D ในหน้าต่าง tracker สร้างเอง)
+Python/calibration.json
