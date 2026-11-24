@@ -3,12 +3,12 @@
 // -----------------------------------------------------------------------------------------------------
 // หน้าที่ : สร้าง Canvas และทุกหน้าจอ แล้วสลับหน้าจอตามสถานะของเกม
 //
-//   Cover ──(กล้องเห็นผู้เล่น)──> Standby ──(ครบ 2 คนค้าง 2 วิ)──> Countdown ──> Play ──(หมดเวลา/ถึงเป้า)──> Result ──(10 วิ)──> Cover
-//                                    └──(ไม่มีใครเลย 8 วิ)──> Cover
+//   Cover (วิดีโอ + UI 0, รอครบ 2 คน) ──> Select (ยกแขนเลือกตัวละคร, นับ 3 วิ, ซูม cinematic)
+//     ──> Tutorial (สอนเล่น) ──> Countdown ──> Play ──(หมดเวลา/ถึงเป้า)──> Result ──(10 วิ)──> Cover
 //
 // ดึงข้อมูล: TrackingReceiver.I.Players (ข้อมูล P1/P2 จากกล้อง) และค่าปรับเกมใน Settings
 // ส่งต่อ  : แต่ละเฟรมส่งข้อมูลผู้เล่นให้ PlayerLane ของคนนั้นไปจัดการเดิน/เล็ง/เก็บขยะ
-// ปุ่มลัด : Space = ข้ามหน้าปก/จุดยืน, R = กลับหน้าปก, F1 = ข้อมูลดีบัก, Esc = ออก
+// ปุ่มลัด : Space = ข้ามหน้าปก/เลือกตัวละคร/สอน (ไม่มีกล้อง: P1 Q/E, P2 U/O = ยกแขนซ้าย/ขวา), R = กลับหน้าปก, F1 = ข้อมูลดีบัก, Esc = ออก
 // =====================================================================================================
 using System.Collections;
 using UnityEngine;
@@ -21,15 +21,16 @@ namespace RTE
     {
         public GameSettings Settings = new GameSettings();
 
-        enum State { Cover, Standby, Countdown, Play, Result }
+        enum State { Cover, Select, Tutorial, Countdown, Play, Result }
         State state;
 
         PlayerLane[] lanes;
         GameObject hudRoot;
         RoundTimer timer;
         CenterOverlay overlay;
-        StandbyScreen standby;
-        CoverScreen cover;
+        IntroCover cover;
+        CharacterSelect select;
+        TutorialScreen tutorial;
         Text debugText;
         float timeLeft;
         bool showDebug;
@@ -45,6 +46,21 @@ namespace RTE
         }
 
         void Start() => GoCover();
+
+        // ใช้ทดสอบจาก Editor/เครื่องมืออัตโนมัติ: ดูสถานะ และข้ามไปหน้าต่าง ๆ
+        public string StateName => state.ToString();
+        public void DebugGo(string to)
+        {
+            switch (to)
+            {
+                case "cover": GoCover(); break;
+                case "select": GoSelect(); break;
+                case "pick": GameSession.Heroes[0] = Hero.Male; GameSession.Heroes[1] = Hero.Female; select.DebugPick(); break;
+                case "pick1": GameSession.Heroes[0] = Hero.Male; select.DebugPick(0); break;
+                case "tutorial": GoTutorial(); break;
+                case "play": StopAllCoroutines(); StartCoroutine(CountdownThenPlay()); break;
+            }
+        }
 
         // สร้าง Canvas 1920x1080 และทุกหน้าจอ (ลำดับที่สร้าง = ลำดับการซ้อน ตัวหลังอยู่บน)
         void BuildScreens()
@@ -65,8 +81,11 @@ namespace RTE
             hudRoot = hud.gameObject;
 
             overlay = new CenterOverlay(canvas);
-            standby = new StandbyScreen(canvas, Settings);
-            cover = new CoverScreen(canvas, gameObject);
+            tutorial = new TutorialScreen(canvas, "GAME 01", "WASTE HUNTERS", "เก็บขยะ กู้อากาศ", "ย่ำเท้า + ยกมือเล็ง",
+                new[] { "เดินอัตโนมัติ ย่ำเท้าเพื่อเร่งความเร็ว", "ขยะจะลอยเข้ามาบนถนนของตัวเอง", "ยกมือเล็งปืนให้แตะขยะ = ดูดทันที", "เก็บให้ครบเป้าก่อนหมดเวลา ชนะ!" },
+                "ย่ำเท้า  ▶  ยกมือ", "tut/g1", "wh/road");
+            select = new CharacterSelect(canvas);
+            cover = new IntroCover(canvas, gameObject);
 
             debugText = UIKit.Label("Debug", canvas, "", 22, Color.yellow, TextAnchor.LowerCenter);
             UIKit.Anchor(debugText.rectTransform, new Vector2(.5f, 0), new Vector2(0, 6));
@@ -77,21 +96,27 @@ namespace RTE
         {
             StopAllCoroutines();
             state = State.Cover;
-            standby.Hide(); hudRoot.SetActive(false); overlay.Hide();
+            select.Hide(); tutorial.Hide(); hudRoot.SetActive(false); overlay.Hide();
             foreach (var lane in lanes) lane.Reset();
             cover.Show();
         }
 
-        void GoStandby()
+        void GoSelect()
         {
-            state = State.Standby;
-            cover.Hide(); standby.Show();
+            state = State.Select;
+            cover.Hide(); select.Show();
+        }
+
+        void GoTutorial()
+        {
+            state = State.Tutorial;
+            select.Hide(); tutorial.Show();
         }
 
         IEnumerator CountdownThenPlay()
         {
             state = State.Countdown;
-            standby.Hide(); hudRoot.SetActive(true);
+            tutorial.Hide(); hudRoot.SetActive(true);
             foreach (var lane in lanes) lane.Reset();
             timeLeft = Settings.RoundSeconds; timer.Set(timeLeft);
             yield return overlay.Countdown();
@@ -123,15 +148,16 @@ namespace RTE
 
             switch (state)
             {
-                case State.Cover:      // รอให้กล้องเห็นผู้เล่นคนแรก
-                    cover.Tick(online);
-                    if ((online && (players[0].present || players[1].present)) || skip) GoStandby();
+                case State.Cover:      // วิดีโอ + UI 0 รอผู้เล่นครบ 2 คน
+                    if (cover.Tick(players, online, skip)) GoSelect();
                     break;
 
-                case State.Standby:    // รอครบ 2 คน
-                    var r = standby.Tick(players, online, skip);
-                    if (r == StandbyScreen.Result.Start) StartCoroutine(CountdownThenPlay());
-                    else if (r == StandbyScreen.Result.Abandoned) GoCover();
+                case State.Select:     // ยกแขนเลือกตัวละคร -> นับ 3 วิ -> ซูม cinematic
+                    if (select.Tick(players, online, skip) == CharacterSelect.Result.Done) GoTutorial();
+                    break;
+
+                case State.Tutorial:   // หน้าต่างสอนก่อนเล่น
+                    if (tutorial.Tick(players, online, skip)) StartCoroutine(CountdownThenPlay());
                     break;
 
                 case State.Play:       // นับเวลา และเช็กว่าจบหรือยัง
@@ -150,7 +176,7 @@ namespace RTE
             debugText.text = !showDebug ? "" :
                 $"tracker {(online ? "ONLINE" : "OFFLINE")} {tracking.TrackerFps:0} fps | " +
                 $"P1 {(players[0].present ? "in" : "-")} {players[0].dist:0.00}m hand {players[0].use} | " +
-                $"P2 {(players[1].present ? "in" : "-")} {players[1].dist:0.00}m hand {players[1].use} | {state}";
+                $"P2 {(players[1].present ? "in" : "-")} {players[1].dist:0.00}m hand {players[1].use} | {state} | hero {GameSession.Heroes[0]}/{GameSession.Heroes[1]}";
         }
     }
 }

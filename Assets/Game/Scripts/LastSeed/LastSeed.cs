@@ -1,7 +1,7 @@
 // =====================================================================================================
 // LastSeed — ตัวควบคุมเกมภารกิจที่ 2 THE LAST SEED (ใส่ไว้ที่ GameObject "Game" ในฉาก The Last Seed)
 // -----------------------------------------------------------------------------------------------------
-//   Standby ──(ครบ 2 คนค้าง 2 วิ / Space)──> Countdown 3-2-1-GO! ──> Play ──(ต้นไม้ 100% / หมดเวลา)──> Result ──> Standby
+//   Tutorial (สอนเล่น: ยกมือค้าง 3 วิ / 20 วิ / Space) ──> Countdown 3-2-1-GO! ──> Play ──(ต้นไม้ 100% / หมดเวลา)──> Result ──> Tutorial
 //
 // วิธีเล่น (ทั้งสองคนใช้ท่าเดียวกัน แต่ได้พลังคนละชนิด: P1 ซ้าย = น้ำ, P2 ขวา = แสงแดด)
 //   1) ชูแขนเป็นตัว V ค้างไว้  -> เกจของตัวเองเพิ่ม (เต็ม = "พร้อมส่ง!")
@@ -23,7 +23,7 @@ namespace RTE
     {
         public SeedSettings Settings = new SeedSettings();
 
-        enum State { Standby, Countdown, Play, Finale, Result }
+        enum State { Tutorial, Countdown, Play, Finale, Result }
         State state;
 
         // โลก 2D
@@ -36,7 +36,7 @@ namespace RTE
         GameObject canvasGo;
         SeedHud hud;
         CenterOverlay overlay;
-        StandbyScreen standby;
+        TutorialScreen tutorial;
         Text debugText;
         bool showDebug, autoplay;
         readonly bool[] botSending = new bool[2];
@@ -65,7 +65,12 @@ namespace RTE
             BuildUI();
         }
 
-        void Start() => GoStandby();
+        void Start() => GoTutorial();
+
+        // ใช้ทดสอบจาก Editor: ดูสถานะ / ไปหน้าสอน / เปิดบอตเล่นเอง
+        public string StateName => state.ToString();
+        public void DebugTutorial() => GoTutorial();
+        public void DebugAutoplay() { autoplay = true; }
 
         void BuildWorld()
         {
@@ -94,8 +99,9 @@ namespace RTE
 
             hud = new SeedHud(canvas);
             overlay = new CenterOverlay(canvas);
-            var standbySettings = new GameSettings { StandbyHold = Settings.StandbyHold, StandbyEmpty = Settings.StandbyEmpty };
-            standby = new StandbyScreen(canvas, standbySettings, "seed/bg");
+            tutorial = new TutorialScreen(canvas, "GAME 02", "THE LAST SEED", "ปลูกต้นไม้ด้วยพลังทีม", "ชูแขนตัว V + ผลักฝ่ามือ",
+                new[] { "ชูแขนเป็นตัว V ค้างไว้ = เก็บพลัง", "ผลักฝ่ามือไปข้างหน้า = ส่งพลังให้ต้นไม้", "P1 ส่งน้ำ  •  P2 ส่งแสงแดด ให้สมดุลกัน", "ส่งพร้อมกัน = PERFECT SYNC โตเร็ว!" },
+                "ชูแขน V  ▶  ผลักมือ", "tut/g2", "seed/bg");
             debugText = UIKit.Label("Debug", canvas, "", 22, Color.yellow, TextAnchor.LowerCenter);
             UIKit.Anchor(debugText.rectTransform, new Vector2(.5f, 0), new Vector2(0, 6));
         }
@@ -115,19 +121,19 @@ namespace RTE
             hud.SetGauges(0, 0); hud.SetGrowth(0); hud.SetTime(timeLeft); hud.SetSync(false, false, 1);
         }
 
-        void GoStandby()
+        void GoTutorial()
         {
             StopAllCoroutines();
-            state = State.Standby;
+            state = State.Tutorial;
             ResetRound();
             hud.Root.SetActive(false); overlay.Hide();
-            standby.Show();
+            tutorial.Show();
         }
 
         IEnumerator CountdownThenPlay()
         {
             state = State.Countdown;
-            standby.Hide(); hud.Root.SetActive(true);
+            tutorial.Hide(); hud.Root.SetActive(true);
             ResetRound();
             for (int i = 0; i < 2; i++)
                 hud.SetHint(i, "เตรียมตัว...", i == 0 ? "Water Guardian" : "Sun Guardian", i == 0 ? SeedSettings.Water : SeedSettings.Sun);
@@ -160,7 +166,7 @@ namespace RTE
                 $"ส่งพร้อมกัน {syncPct * 100:0}% ของเวลา   •   PERFECT SYNC {perfectSyncs} ครั้ง" +
                 (grown ? $"   •   ใช้เวลา {playTime:0} วินาที" : ""));
             yield return new WaitForSeconds(Settings.ResultSeconds);
-            GoStandby();
+            GoTutorial();
         }
 
         // ================================================================== ทุกเฟรม
@@ -177,17 +183,12 @@ namespace RTE
                 if (keys.escapeKey.wasPressedThisFrame) Application.Quit();
                 if (keys.f1Key.wasPressedThisFrame) showDebug = !showDebug;
                 if (keys.f2Key.wasPressedThisFrame) autoplay = !autoplay;
-                if (keys.rKey.wasPressedThisFrame) GoStandby();
+                if (keys.rKey.wasPressedThisFrame) GoTutorial();
             }
 
-            if (state == State.Standby)
-            {
-                // ไม่มีกล้อง: ข้ามด้วย Space เท่านั้น (StandbyScreen นับว่า "ไม่มีคน" เมื่อไม่ online อยู่แล้ว)
-                var r = standby.Tick(players, online, skip);
-                if (r == StandbyScreen.Result.Start) StartCoroutine(CountdownThenPlay());
-            }
+            if (state == State.Tutorial && tutorial.Tick(players, online, skip)) StartCoroutine(CountdownThenPlay());
 
-            if (autoplay && state == State.Standby && standby != null) StartCoroutine(CountdownThenPlay());
+            if (autoplay && state == State.Tutorial) StartCoroutine(CountdownThenPlay());
             Autoplay();
 
             bool playing = state == State.Play;
@@ -203,7 +204,7 @@ namespace RTE
                 }
                 if (sending[i] && !wasSending[i]) { sendStart[i] = Time.time; sends[i]++; }
                 wasSending[i] = sending[i];
-                guardians[i].Tick(state == State.Standby ? SeedPose.None : pose, gauge[i], sending[i], poses[i].Reach, lost, dt);
+                guardians[i].Tick(state == State.Tutorial ? SeedPose.None : pose, gauge[i], sending[i], poses[i].Reach, lost, dt);
             }
 
             // ---------------- พลังที่ถึงต้นไม้ -> การเติบโต
@@ -260,7 +261,7 @@ namespace RTE
             greenery.color = new Color(.55f, 1f, .55f, green * .45f);
             background.color = Color.Lerp(Color.white, new Color(.9f, 1f, .9f), green);
 
-            if (state != State.Standby)
+            if (state != State.Tutorial)
             {
                 hud.SetGauges(gauge[0], gauge[1]);
                 hud.SetGrowth(growth);
