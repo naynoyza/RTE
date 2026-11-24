@@ -1,9 +1,9 @@
 // =====================================================================================================
 // PlayerHud — แผงข้อมูลของผู้เล่น 1 คน (มุมบน/ล่างของจอฝั่งตัวเอง)
 // -----------------------------------------------------------------------------------------------------
-// หน้าที่ : แสดง คะแนน (SCORE), ของในถุง (INVENTORY), รีไซเคิลแล้ว/เป้าหมาย (GOAL),
+// หน้าที่ : แสดง คะแนน (SCORE), รีไซเคิลแล้ว/เป้าหมาย (GOAL), ข้อความเตือนข้างช่อง GOAL,
 //           แถบความเร็วเดิน และแผงโครงกระดูกเล็ก (ให้รู้ว่ากล้องกำลังตามตัวเราอยู่)
-// ดึงข้อมูล: กรอบจาก Resources/Sprites/wh (score_p1/2, inv_p1/2, goal), ตัวเลขจาก PlayerLane
+// ดึงข้อมูล: กรอบจาก Resources/Sprites/wh (score_p1/2, goal), ตัวเลขจาก PlayerLane
 // วางที่  : P1 ชิดซ้าย, P2 ชิดขวา
 // =====================================================================================================
 using UnityEngine;
@@ -13,7 +13,7 @@ namespace RTE
 {
     public class PlayerHud
     {
-        readonly Text score, bag, goal, speedLabel;
+        readonly Text score, goal, speedLabel, warning;
         readonly Image speedFill;
         readonly SkeletonView skeleton;
         readonly Color color;
@@ -31,36 +31,38 @@ namespace RTE
             score = UIKit.Label("Value", scoreFrame.transform, "0", 72, Color.white);
             score.rectTransform.anchoredPosition = new Vector2(left ? 75 : 70, -30);
 
-            var bagFrame = UIKit.Img($"P{slot}Inventory", parent, UIKit.Load(left ? "wh/inv_p1" : "wh/inv_p2"), new Vector2(330, 182));
-            UIKit.Anchor(bagFrame.rectTransform, corner, new Vector2(28 * side, -225));
-            bag = UIKit.Label("Value", bagFrame.transform, "0", 70, Color.black);
-            bag.GetComponent<Shadow>().enabled = false;
-            bag.rectTransform.anchoredPosition = new Vector2(60, -10);
-
             var speedBg = UIKit.Panel($"P{slot}Speed", parent, new Vector2(300, 34), new Color(0, 0, 0, .55f));
-            UIKit.Anchor(speedBg.rectTransform, corner, new Vector2(40 * side, -415));
+            UIKit.Anchor(speedBg.rectTransform, corner, new Vector2(40 * side, -235));
             speedFill = UIKit.Panel("Fill", speedBg.transform, new Vector2(SpeedBarWidth, 26), color);
             speedFill.rectTransform.pivot = speedFill.rectTransform.anchorMin = speedFill.rectTransform.anchorMax = new Vector2(0, .5f);
             speedFill.rectTransform.anchoredPosition = new Vector2(4, 0);
             speedLabel = UIKit.Label("Label", speedBg.transform, "", 26, Color.white);
 
             var skeletonBg = UIKit.Panel($"P{slot}SkeletonPanel", parent, new Vector2(150, 200), new Color(0, 0, 0, .45f));
-            UIKit.Anchor(skeletonBg.rectTransform, corner, new Vector2(40 * side, -460));
+            UIKit.Anchor(skeletonBg.rectTransform, corner, new Vector2(40 * side, -280));
             skeleton = new SkeletonView(skeletonBg.transform, "Skeleton", new Vector2(140, 190), color, 5);
 
             var goalFrame = UIKit.Img($"P{slot}Goal", parent, UIKit.Load("wh/goal"), new Vector2(360, 172));
             UIKit.Anchor(goalFrame.rectTransform, new Vector2(left ? 0 : 1, 0), new Vector2(20 * side, 16));
             goal = UIKit.Label("Value", goalFrame.transform, "", 56, new Color(1f, .85f, .2f));
             goal.rectTransform.anchoredPosition = new Vector2(50, -22);
+
+            // ข้อความเตือน (เช่น เล็งค้างที่เดิม) วางข้างช่อง GOAL ไม่บังพื้นที่เล่น
+            warning = UIKit.Label($"P{slot}Warning", parent, "", 36, new Color(1f, .45f, .35f),
+                                  left ? TextAnchor.LowerLeft : TextAnchor.LowerRight);
+            UIKit.Anchor(warning.rectTransform, new Vector2(left ? 0 : 1, 0), new Vector2(395 * side, 40));
+            warning.rectTransform.sizeDelta = new Vector2(420, 110);
+            var shadow = warning.GetComponent<Shadow>();                            // เงาดำ (Label ใส่มาให้แล้ว)
+            shadow.effectColor = new Color(0, 0, 0, .85f); shadow.effectDistance = new Vector2(5, -5);
         }
 
-        // ตัวเลขคะแนน / ถุง (เต็มแล้วเป็นสีแดง) / รีไซเคิล
-        public void SetNumbers(int scoreValue, int inBag, int bagSize, int recycled, int goalValue)
+        public void SetWarning(string text) { if (warning.text != text) warning.text = text; }
+
+        // ตัวเลขคะแนน / รีไซเคิลแล้ว
+        public void SetNumbers(int scoreValue, int collected, int goalValue)
         {
             score.text = scoreValue.ToString();
-            bag.text = inBag.ToString();
-            bag.color = inBag >= bagSize ? new Color(.85f, .15f, .1f) : new Color(.2f, .2f, .22f);
-            goal.text = $"{recycled} / {goalValue}";
+            goal.text = $"{collected} / {goalValue}";
         }
 
         // แถบความเร็ว: ยาวตามความเร็ว, เขียวขึ้นตามแรงเร่งจากการย่ำเท้า

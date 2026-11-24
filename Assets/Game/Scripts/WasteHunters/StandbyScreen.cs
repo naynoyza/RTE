@@ -24,13 +24,13 @@ namespace RTE
         readonly GameSettings settings;
         float bothReadyTime, emptyTime;
 
-        public StandbyScreen(Transform canvas, GameSettings settings)
+        public StandbyScreen(Transform canvas, GameSettings settings, string background = "wh/road")
         {
             this.settings = settings;
             var rt = UIKit.Rect("StandbyScreen", canvas); UIKit.Stretch(rt);
             root = rt.gameObject;
 
-            var bg = UIKit.Img("Road", rt, UIKit.Load("wh/road"), Vector2.zero, false);
+            var bg = UIKit.Img("Background", rt, UIKit.Load(background), Vector2.zero, false);
             UIKit.Stretch(bg.rectTransform); bg.color = new Color(.45f, .45f, .5f);
             title = UIKit.Label("Title", rt, "", 76, Color.white);
             UIKit.Anchor(title.rectTransform, new Vector2(.5f, 1), new Vector2(0, -60));
