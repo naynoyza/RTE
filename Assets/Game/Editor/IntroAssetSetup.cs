@@ -18,7 +18,7 @@ namespace RTE.EditorTools
         [MenuItem("RTE/Setup Intro Assets")]
         public static void Setup()
         {
-            foreach (var folder in new[] { "Assets/Game/Resources/Sprites/intro", "Assets/Game/Resources/Sprites/tut", "Assets/Game/Resources/Sprites/fx" })
+            foreach (var folder in new[] { "Assets/Game/Resources/Sprites/intro", "Assets/Game/Resources/Sprites/tut", "Assets/Game/Resources/Sprites/fx", "Assets/Game/Resources/Sprites/g1" })
                 foreach (var guid in AssetDatabase.FindAssets("t:Texture2D", new[] { folder }))
                 {
                     var ti = (TextureImporter)AssetImporter.GetAtPath(AssetDatabase.GUIDToAssetPath(guid));

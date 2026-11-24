@@ -21,6 +21,7 @@ namespace RTE
         readonly Image[] parts = new Image[ParticleCount];
         readonly float[] partPhase = new float[ParticleCount], partX = new float[ParticleCount], partSpeed = new float[ParticleCount];
         float burstT = 99, level;
+        public float Boost;          // 0..1 ช่วงออกภารกิจ: เสาแสงกว้าง/สว่างขึ้น อนุภาคพุ่งเร็ว
 
         // back = ชั้นหลังโมเดล (สร้างก่อนโมเดล), front = ชั้นหน้าโมเดล (สร้างหลังโมเดล)
         public RingFx(Transform back, Transform front, Vector2 center, Color color)
@@ -68,14 +69,15 @@ namespace RTE
             floorGlow.color = WithA(color, .35f + .45f * level);
 
             // เสาแสง: ส่ายเล็กน้อย กว้าง/สว่างตามระดับ
-            beam.color = WithA(color, (.12f + .4f * level) * pulse);
-            beam.rectTransform.localScale = new Vector3(.8f + .4f * level + .05f * Mathf.Sin(t * 2.3f), 1, 1);
-            beamCore.color = WithA(Color.Lerp(color, Color.white, .6f), (.08f + .45f * level) * pulse);
+            beam.color = WithA(color, (.12f + .4f * level) * pulse + .5f * Boost);
+            beam.rectTransform.localScale = new Vector3(.8f + .4f * level + .05f * Mathf.Sin(t * 2.3f) + 1.2f * Boost, 1 + .3f * Boost, 1);
+            beamCore.color = WithA(Color.Lerp(color, Color.white, .6f + .4f * Boost), (.08f + .45f * level) * pulse + .6f * Boost);
+            beamCore.rectTransform.localScale = new Vector3(1 + 1.5f * Boost, 1 + .3f * Boost, 1);
 
             // อนุภาคลอยขึ้นวนซ้ำ (เร็วขึ้นเมื่อระดับสูง)
             for (int k = 0; k < ParticleCount; k++)
             {
-                partPhase[k] = (partPhase[k] + dt * partSpeed[k] * (.6f + level)) % 1f;
+                partPhase[k] = (partPhase[k] + dt * partSpeed[k] * (.6f + level + 4f * Boost)) % 1f;
                 float p = partPhase[k];
                 var rt = parts[k].rectTransform;
                 rt.anchoredPosition = center + new Vector2(partX[k] * (1 - p * .4f) + Mathf.Sin(t * 2 + k) * 10, -20 + p * 620);

@@ -15,6 +15,23 @@ namespace RTE
         const int LS = 5, RS = 6, LW = 9, RW = 10;
         const float MinConf = .3f;
 
+        // ชูแขนทั้งสองข้าง (ข้อมือทั้งคู่สูงกว่าไหล่) — ใช้เป็นท่า "พร้อมออกภารกิจ"
+        // ไม่มีกล้อง: P1 กด Q+E พร้อมกัน, P2 กด U+O พร้อมกัน
+        public static bool BothUp(TrackedPlayer p, int slot, bool online)
+        {
+            if (!online)
+            {
+                var k = Keyboard.current; if (k == null) return false;
+                return slot == 0 ? k.qKey.isPressed && k.eKey.isPressed : k.uKey.isPressed && k.oKey.isPressed;
+            }
+            var kp = p.kp;
+            if (!p.present || kp == null || kp.Length < 51) return false;
+            bool Ok(int i) => kp[i * 3 + 2] > MinConf;
+            if (!Ok(LS) || !Ok(RS) || !Ok(LW) || !Ok(RW)) return false;
+            float margin = Mathf.Max(.02f, Mathf.Abs(kp[LS * 3] - kp[RS * 3]) * .25f);
+            return kp[LS * 3 + 1] - kp[LW * 3 + 1] > margin && kp[RS * 3 + 1] - kp[RW * 3 + 1] > margin;
+        }
+
         // -1 = ไม่ยก, 0 = ยกแขนด้านซ้ายของจอ, 1 = ด้านขวาของจอ
         public static int Side(TrackedPlayer p, int slot, bool online)
         {

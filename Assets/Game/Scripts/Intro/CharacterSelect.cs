@@ -3,7 +3,7 @@
 // -----------------------------------------------------------------------------------------------------
 // ผู้เล่นยกแขนค้าง HoldSeconds:  ด้านซ้าย = MALE, ด้านขวา = FEMALE
 // ตัวที่ถูกอีกคนเลือกแล้วจะล็อค (เลือกซ้ำไม่ได้ ต้องใช้อีกตัว) เมื่อเลือกได้ โมเดล 3D จะขึ้นยืนบนวงกลมฝั่งตัวเอง
-// ได้ครบ 2 คน -> นับถอยหลัง 3 วิ -> ซูมเข้าแบบ cinematic + จอดำ -> Tick() คืน Done
+// ได้ครบ 2 คน -> LaunchSequence: READY CHECK (ชูแขน 2 ข้างพร้อมกัน) -> TELEPORT เข้าเสาแสง -> WARP + การ์ดภารกิจ -> แฟลช -> Done
 // P1 = ฝั่งซ้าย (วงชมพู), P2 = ฝั่งขวา (วงฟ้า)
 // =====================================================================================================
 using UnityEngine;
@@ -14,7 +14,7 @@ namespace RTE
     public class CharacterSelect
     {
         public enum Result { Selecting, Done }
-        const float HoldSeconds = 3.5f, CountSeconds = 3f, ZoomSeconds = 1.6f;
+        const float HoldSeconds = 3.5f;
 
         readonly RectTransform root, zoomLayer;
         readonly Image fade;
@@ -30,7 +30,10 @@ namespace RTE
         const float ModelH = 1000f;
         readonly int[] holdSide = { -1, -1 };
         float countT, zoomT;
-        int phase;   // 0 เลือก, 1 นับถอยหลัง, 2 ซูม
+        int phase;   // 0 เลือก, 1 READY CHECK, 2 ออกภารกิจ (teleport/warp/flash)
+        readonly float[] readyHold = new float[2];
+        readonly bool[] ready = new bool[2];
+        LaunchSequence launch;
 
         static readonly Color Pink = new Color(1f, .35f, .8f), Cyan = new Color(.25f, .95f, 1f);
         static Color PColor(int i) => i == 0 ? Pink : Cyan;
@@ -96,6 +99,7 @@ namespace RTE
 
             big = UIKit.Label("Big", root, "", 220, Color.white);
             big.rectTransform.anchoredPosition = new Vector2(0, -250);
+            launch = new LaunchSequence(root);
             fade = UIKit.Img("Fade", root, null, Vector2.zero, false); UIKit.Stretch(fade.rectTransform);
             fade.color = new Color(0, 0, 0, 0);
             Hide();
@@ -108,7 +112,15 @@ namespace RTE
             phase = 0; countT = zoomT = 0;
             zoomLayer.localScale = Vector3.one; zoomLayer.anchoredPosition = Vector2.zero;
             fade.color = new Color(0, 0, 0, 0); big.text = "";
-            for (int i = 0; i < 2; i++) { hold[i] = 0; holdSide[i] = -1; stages[i].Set(Hero.None); stages[i].SetActive(true); }
+            for (int i = 0; i < 2; i++)
+            {
+                hold[i] = 0; holdSide[i] = -1; readyHold[i] = 0; ready[i] = false; ringFx[i].Boost = 0;
+                stages[i].Set(Hero.None); stages[i].SetActive(true);
+                stages[i].Image.rectTransform.localScale = Vector3.one; stages[i].Image.color = Color.white;
+            }
+            launch.Reset();
+            title.text = "SELECT CHARACTER";
+            sub.text = "ยกแขนค้างไว้ 3 วินาที   ◀ แขนซ้าย = MALE   •   FEMALE = แขนขวา ▶";
         }
 
         public void Hide()
@@ -120,7 +132,11 @@ namespace RTE
         public Result Tick(TrackedPlayer[] players, bool online, bool skip)
         {
             float dt = Time.deltaTime;
-            for (int i = 0; i < 2; i++) { stages[i].Tick(); PlaceModel(i); ringFx[i].Tick(hold[i] / HoldSeconds, GameSession.Heroes[i] != Hero.None); }
+            for (int i = 0; i < 2; i++)
+            {
+                stages[i].Tick(); PlaceModel(i);
+                ringFx[i].Tick(phase == 1 ? readyHold[i] / LaunchSequence.ReadyHold : hold[i] / HoldSeconds, GameSession.Heroes[i] != Hero.None);
+            }
 
             if (phase == 0)
             {
@@ -131,28 +147,54 @@ namespace RTE
                                                                         GameSession.Heroes[1 - i] == Hero.Female ? Hero.Male : (Hero)i);
                 UpdateCards();
                 bool both = GameSession.Heroes[0] != Hero.None && GameSession.Heroes[1] != Hero.None;
-                centerStatus.text = both ? "พร้อมออกภารกิจ!" : "เลือกตัวละครของคุณ";
-                if (both) phase = 1;
+                centerStatus.text = both ? "เลือกครบแล้ว!" : "เลือกตัวละครของคุณ";
+                if (both) { phase = 1; countT = 0; }
             }
-            else if (phase == 1)                            // นับถอยหลัง 3-2-1
+            else if (phase == 1)                            // READY CHECK: ชูแขน 2 ข้างค้าง 1 วิ ทั้งคู่
             {
                 countT += dt;
-                int n = Mathf.CeilToInt(CountSeconds - countT);
-                big.text = n > 0 ? n.ToString() : "";
-                big.rectTransform.localScale = Vector3.one * UIKit.EaseOutBack(Mathf.Clamp01((countT % 1f) / .3f));
-                centerStatus.text = $"เริ่มภารกิจใน {Mathf.Max(n, 0)}";
-                if (countT >= CountSeconds) { phase = 2; big.text = ""; }
+                for (int i = 0; i < 2; i++)
+                {
+                    if (ready[i]) continue;
+                    bool up = ArmRaise.BothUp(players[i], i, online);
+                    readyHold[i] = up ? readyHold[i] + dt : Mathf.Max(0, readyHold[i] - dt * 2);
+                    progress[i].fillAmount = readyHold[i] / LaunchSequence.ReadyHold;
+                    pLabel[i].text = $"P{i + 1}: ชูแขน 2 ข้าง!";
+                    if (readyHold[i] >= LaunchSequence.ReadyHold)
+                    {
+                        ready[i] = true; ringFx[i].Burst(); progress[i].fillAmount = 0;
+                        pLabel[i].text = $"P{i + 1}  พร้อม! ✓";
+                    }
+                }
+                launch.ReadyCheck(countT, ready);
+                centerStatus.text = "READY CHECK";
+                title.text = "READY CHECK";
+                sub.text = "ชูแขนทั้ง 2 ข้างค้างไว้ 1 วินาที  เพื่อยืนยันว่าพร้อมออกภารกิจ";
+                if ((ready[0] && ready[1]) || countT >= LaunchSequence.AutoSeconds || skip)
+                {
+                    phase = 2; zoomT = 0;
+                    for (int i = 0; i < 2; i++) { ringFx[i].Burst(); progress[i].fillAmount = 0; }
+                }
             }
-            else                                            // ซูมเข้า cinematic แล้วจอดำ
+            else                                            // ออกภารกิจ: teleport -> warp + การ์ดภารกิจ -> แฟลช
             {
                 zoomT += dt;
-                float t = Mathf.Clamp01(zoomT / ZoomSeconds);
-                float e = t * t * (3 - 2 * t);
-                zoomLayer.localScale = Vector3.one * Mathf.Lerp(1f, 2.6f, e * e);
-                zoomLayer.anchoredPosition = new Vector2(0, Mathf.Lerp(0, 250, e));
-                zoomLayer.localRotation = Quaternion.Euler(0, 0, Mathf.Lerp(0, -3, e));
-                fade.color = new Color(0, 0, 0, Mathf.Clamp01((t - .45f) / .55f));
-                if (t >= 1) { zoomLayer.localRotation = Quaternion.identity; return Result.Done; }
+                // TELEPORT: เสาแสงแรงขึ้น ตัวละครยืดเป็นลำแสงแล้วลอยหายขึ้นไป
+                float tp = Mathf.Clamp01(zoomT / LaunchSequence.TeleportSeconds);
+                for (int i = 0; i < 2; i++)
+                {
+                    ringFx[i].Boost = Mathf.SmoothStep(0, 1, Mathf.Clamp01(zoomT / .5f));
+                    float squeeze = Mathf.SmoothStep(0, 1, Mathf.InverseLerp(.35f, 1f, tp));
+                    var img = stages[i].Image;
+                    img.rectTransform.localScale = new Vector3(Mathf.Lerp(1, .05f, squeeze), Mathf.Lerp(1, 1.6f, squeeze), 1);
+                    img.rectTransform.anchoredPosition += new Vector2(0, squeeze * squeeze * 500);
+                    img.color = new Color(1 + squeeze, 1 + squeeze, 1 + squeeze, 1 - Mathf.InverseLerp(.75f, 1f, tp));
+                    pLabel[i].text = "";
+                }
+                // พื้นหลังซูมเข้าเล็กน้อยระหว่างวาร์ป
+                float wt = Mathf.Clamp01((zoomT - LaunchSequence.TeleportSeconds) / LaunchSequence.WarpSeconds);
+                zoomLayer.localScale = Vector3.one * (1 + .5f * wt * wt);
+                if (launch.Launch(zoomT, GameSession.Heroes)) return Result.Done;
             }
             return Result.Selecting;
         }
