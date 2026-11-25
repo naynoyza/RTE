@@ -61,9 +61,9 @@ namespace RTE
             {
                 spark = UIKit.Img("Spark", Rect, UIKit.Load("fx/lightning"), Vector2.zero, false);
                 UIKit.Stretch(spark.rectTransform); spark.rectTransform.sizeDelta = new Vector2(90, 90);
-                warnImg = UIKit.Img("Danger", Rect, UIKit.Load("fx/danger_text"), new Vector2(230, 70));
+                warnImg = UIKit.Img("Danger", Rect, UIKit.Load("ui2/danger_tag"), new Vector2(190, 92));   // ป้าย DANGER ห้ามดูด
                 warnImg.rectTransform.anchorMin = warnImg.rectTransform.anchorMax = new Vector2(.5f, 1);
-                warnImg.rectTransform.anchoredPosition = new Vector2(0, 40);
+                warnImg.rectTransform.anchoredPosition = new Vector2(0, 55);
             }
             Pace = 1f - hardSlowdown * Hardness;
             Place();

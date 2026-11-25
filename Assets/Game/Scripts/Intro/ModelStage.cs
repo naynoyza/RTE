@@ -39,7 +39,7 @@ namespace RTE
             key.transform.LookAt(host.position + Vector3.up);
             var rim = new GameObject("Rim").AddComponent<Light>();
             rim.type = LightType.Point; rim.range = 8; rim.intensity = 12;
-            rim.color = slot == 0 ? new Color(1f, .4f, .8f) : new Color(.3f, 1f, 1f);
+            rim.color = GameSettings.PlayerColors[slot];   // ไฟขอบสีประจำผู้เล่น
             rim.transform.SetParent(host, false); rim.transform.localPosition = new Vector3(-1.5f, 2f, 1.5f);
             var fill = new GameObject("Fill").AddComponent<Light>();
             fill.type = LightType.Point; fill.range = 8; fill.intensity = 8;

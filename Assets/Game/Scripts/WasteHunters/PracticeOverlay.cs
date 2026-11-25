@@ -21,7 +21,7 @@ namespace RTE
         readonly Image[] box = new Image[2], readyBadge = new Image[2];
         readonly Text[] boxText = new Text[2];
         readonly Image cardIcon;
-        readonly Text[] chevrons = new Text[3];
+        Image stepIcon;
         float time, bothReadyTime;
 
         static readonly Color Metal = new Color(.08f, .09f, .1f, 1f), Green = new Color(.3f, 1f, .35f);
@@ -57,11 +57,10 @@ namespace RTE
                     cardIcon = UIKit.Img("Trash", ring.transform, UIKit.Load("wh/t_battery"), new Vector2(100, 100));
                 }
                 else
-                    for (int k = 0; k < 3; k++)
-                    {
-                        chevrons[k] = UIKit.Label($"Chevron{k}", card.transform, "▲", 70, new Color(.3f, .9f, 1f));
-                        chevrons[k].rectTransform.anchoredPosition = new Vector2(0, -60 + k * 55);
-                    }
+                {
+                    stepIcon = UIKit.Img("StepIcon", card.transform, UIKit.Load("ui2/step_icon"), new Vector2(190, 170));
+                    stepIcon.rectTransform.anchoredPosition = new Vector2(0, 10);
+                }
             }
             var foot = UIKit.Panel("Footer", panel.transform, new Vector2(690, 70), new Color(.05f, .05f, .06f, 1));
             foot.rectTransform.anchoredPosition = new Vector2(0, -210);
@@ -80,9 +79,8 @@ namespace RTE
                 boxText[i].rectTransform.pivot = new Vector2(0, .5f);
                 boxText[i].alignment = TextAnchor.MiddleLeft;
 
-                readyBadge[i] = UIKit.Panel($"P{i + 1}Ready", rt, new Vector2(300, 100), new Color(.05f, .25f, .08f, .95f));
-                UIKit.Anchor(readyBadge[i].rectTransform, corner, new Vector2(60 * side, 390));
-                UIKit.Label("Text", readyBadge[i].transform, "READY!", 66, Green);
+                readyBadge[i] = UIKit.Img($"P{i + 1}Ready", rt, UIKit.Load("ui2/ready_badge"), new Vector2(320, 102));
+                UIKit.Anchor(readyBadge[i].rectTransform, corner, new Vector2(40 * side, 390));
             }
             root.SetActive(false);
         }
@@ -111,10 +109,10 @@ namespace RTE
                 readyBadge[i].rectTransform.localScale = Vector3.one * (1 + .05f * Mathf.Sin(Time.time * 8));
             }
 
-            // แอนิเมชันการ์ด: วงเล็งโยก, ลูกศรวิ่งขึ้น
+            // แอนิเมชันการ์ด: วงเล็งโยก, รองเท้าเด้ง
             cardIcon.rectTransform.parent.localPosition = new Vector3(Mathf.Sin(time * 3) * 50, Mathf.Cos(time * 2) * 12, 0);
-            for (int k = 0; k < 3; k++)
-                chevrons[k].color = new Color(.3f, .9f, 1f, (Mathf.Sin(time * 8 - k * 1.2f) + 1) * .5f);
+            stepIcon.rectTransform.localScale = Vector3.one * (1 + .06f * Mathf.Abs(Mathf.Sin(time * 7)));   // รองเท้าเด้งตามจังหวะย่ำ
+            stepIcon.rectTransform.localRotation = Quaternion.Euler(0, 0, Mathf.Sin(time * 7) * 6);
 
             bothReadyTime = all ? bothReadyTime + dt : 0;
             return bothReadyTime >= .8f || time >= MaxSeconds || (skip && time > .3f);

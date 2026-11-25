@@ -3,7 +3,7 @@
 // -----------------------------------------------------------------------------------------------------
 // มาจากเกม 1 (GameSession.Active): เฝ้าผู้เล่นต่อ หลุดนาน/จบเกม -> กลับหน้าปก (ฉาก WasteHunters)
 //   Practice (สอนเล่นซ้อนบนฉากจริง 2 สเต็ป: ชูแขน V จนเกจเต็มทั้งคู่ -> ผลักฝ่ามือพร้อมกัน / 15 วิ / Space)
-//     ──> Countdown 3-2-1-GO! ──> Play ──(ต้นไม้ 100% / หมดเวลา)──> Result ──> Practice
+//     ──> Countdown 3-2-1-GO! ──> Play ──(ต้นไม้ 100%; หมดเวลาเฉพาะเมื่อเปิด ShowTimer)──> Result ──> Practice
 //   ต้นไม้ 4 ระดับ: ต้นอ่อน 0–25% • ต้นกล้า 25–50% • ต้นไม้วัยรุ่น 50–75% • โตเต็มวัย 75–100%
 //
 // วิธีเล่น (ทั้งสองคนใช้ท่าเดียวกัน แต่ได้พลังคนละชนิด: P1 ซ้าย = น้ำ, P2 ขวา = แสงแดด)
@@ -30,7 +30,8 @@ namespace RTE
         State state;
 
         // โลก 2D
-        SpriteRenderer background, greenery;
+        SpriteRenderer background, greenery, finaleBg;
+        const float FinaleSeconds = 5f;   // ฉากจบ: ซ่อน HUD/แขน, ฉากหลังเปลี่ยนเป็นเมืองที่ฟื้นแล้ว ก่อนขึ้นหน้าสรุปผล
         TreeView tree;
         readonly GuardianView[] guardians = new GuardianView[2];
         readonly PoseDetector[] poses = new PoseDetector[2];
@@ -53,7 +54,8 @@ namespace RTE
         readonly int[] sends = new int[2];             // จำนวนครั้งที่ส่ง
         readonly float[] sendStart = { -99, -99 };
         readonly bool[] wasSending = new bool[2];
-        float growth, timeLeft, syncSeconds, soloSeconds, green;
+        float stallTime, lastGrowth; bool assist;   // ตัวช่วย: ต้นไม้ไม่โตนานเท่าไรแล้ว / เปิดตัวช่วยหรือยัง
+        float growth, timeLeft, playTime, syncSeconds, soloSeconds, green;   // playTime = เล่นไปแล้วกี่วินาที (แสดงในหน้าสรุปผล)
         int perfectSyncs, stageShown;
 
         void Awake()
@@ -87,6 +89,11 @@ namespace RTE
             // ชั้นสีเขียวทับพื้นหลัง ค่อย ๆ ชัดขึ้นตอนต้นไม้โตเต็ม (เมืองกลับมาเขียว)
             greenery = SeedKit.MakeSprite("Greenery", world, SeedKit.Spr("bg", new Vector2(.5f, .5f)), SeedKit.OrderBg + 1);
             greenery.color = new Color(.55f, 1f, .55f, 0);
+            // ฉากหลังเมืองที่ฟื้นแล้ว (ui2/finale_bg) ค่อย ๆ ปรากฏตอนต้นไม้โตเต็ม — ขยายให้เต็มขนาดฉากหลังเดิม
+            finaleBg = SeedKit.MakeSprite("FinaleBg", world, UIKit.Load("ui2/finale_bg"), SeedKit.OrderBg + 2);
+            var bs = background.sprite.bounds.size; var fs = finaleBg.sprite.bounds.size;
+            finaleBg.transform.localScale = new Vector3(bs.x / fs.x, bs.y / fs.y, 1);
+            finaleBg.color = new Color(1, 1, 1, 0);
             tree = new TreeView(world);
             for (int i = 0; i < 2; i++)
             {
@@ -105,7 +112,7 @@ namespace RTE
             scaler.referenceResolution = new Vector2(1920, 1080);
             scaler.matchWidthOrHeight = .5f;
 
-            hud = new SeedHud(canvas);
+            hud = new SeedHud(canvas) { ShowTimer = Settings.ShowTimer };
             overlay = new CenterOverlay(canvas);
             practice = new SeedPractice(canvas);
             guard = new PresenceGuard(canvas);
@@ -122,7 +129,8 @@ namespace RTE
                 poses[i].Reset(); guardians[i].Reset();
             }
             growth = 0; green = 0; syncSeconds = soloSeconds = 0; perfectSyncs = 0; stageShown = 0;
-            timeLeft = Settings.RoundSeconds;
+            timeLeft = Settings.RoundSeconds; playTime = 0;
+            stallTime = lastGrowth = 0; assist = false; hud.SetStallHint(false);
             tree.Reset(); tree.Celebrate(false);
             greenery.color = new Color(.55f, 1f, .55f, 0);
             hud.SetGauges(0, 0); hud.SetGrowth(0); hud.SetTime(timeLeft); hud.SetSync(false, false, 1);
@@ -135,6 +143,7 @@ namespace RTE
             state = State.Practice;
             ResetRound();
             hud.Root.SetActive(true); overlay.Hide();
+            for (int i = 0; i < 2; i++) guardians[i].SetVisible(true);
             hud.SetPractice(true, "HOW TO PLAY • 15s");
             practiceStep = 1; practiceTime = 0; practiceEndT = -1;
             practiceArrived[0] = practiceArrived[1] = false;
@@ -156,10 +165,11 @@ namespace RTE
         {
             state = State.Finale;
             tree.Burst(140); tree.Celebrate(true);
-            hud.Popup("ต้นไม้โตเต็มที่!");
-            for (float t = 0; t < 3.5f; t += Time.deltaTime)
+            hud.Root.SetActive(false);                                      // ฉากจบ: เหลือแต่ต้นไม้กับฉากหลัง
+            for (int i = 0; i < 2; i++) guardians[i].SetVisible(false);
+            for (float t = 0; t < FinaleSeconds; t += Time.deltaTime)
             {
-                green = Mathf.SmoothStep(0, 1, t / 3.5f);
+                green = Mathf.SmoothStep(0, 1, t / (FinaleSeconds * .8f));
                 yield return null;
             }
             yield return ShowResult(true);
@@ -170,15 +180,34 @@ namespace RTE
             state = State.Result;
             float total = sent[0] + sent[1];
             float balance = total > 0 ? Mathf.Min(sent[0], sent[1]) / Mathf.Max(sent[0], sent[1]) : 0;
-            float playTime = Settings.RoundSeconds - timeLeft;
+
             float syncPct = syncSeconds + soloSeconds > 0 ? syncSeconds / (syncSeconds + soloSeconds) : 0;
-            overlay.ShowMessage(grown ? "ต้นไม้โตเต็มที่!" : $"หมดเวลา  ต้นไม้โต {Mathf.FloorToInt(growth * 100)}%",
-                $"ส่งน้ำ {sends[0]} ครั้ง   •   ส่งแสงแดด {sends[1]} ครั้ง   •   ความสมดุล {balance * 100:0}%\n" +
-                $"ส่งพร้อมกัน {syncPct * 100:0}% ของเวลา   •   PERFECT SYNC {perfectSyncs} ครั้ง" +
-                (grown ? $"   •   ใช้เวลา {playTime:0} วินาที" : ""));
+            hud.Root.SetActive(false);
+            for (int i = 0; i < 2; i++) guardians[i].SetVisible(false);
+            // การ์ดซ้าย = น้ำ (P1), ขวา = แสงแดด (P2), วงกลาง = ความสมดุล; ย่อและเลื่อนลงให้เห็นต้นไม้ด้านบน
+            overlay.ShowCards(grown ? "ui2/tree_banner" : null, grown ? "" : $"หมดเวลา  ต้นไม้โต {Mathf.FloorToInt(growth * 100)}%",
+                new CenterOverlay.Card { Title = "น้ำ", Body = $"ส่ง {sends[0]} ครั้ง" },
+                new CenterOverlay.Card { Title = "แสงแดด", Body = $"ส่ง {sends[1]} ครั้ง" },
+                "ui2/air_gauge", $"{balance * 100:0}%",
+                $"ความสมดุล • พร้อมกัน {syncPct * 100:0}% • PERFECT {perfectSyncs}" + (grown ? $" • {playTime:0} วิ" : ""),
+                // ดาว: โตเต็มวัดจากความสมดุล+ความพร้อมกัน, ยังไม่เต็มวัดจากการเติบโต (ได้ไม่เกิน 2 ดาว)
+                grown ? CenterOverlay.Stars((balance + syncPct) * .5f) : Mathf.Min(2, CenterOverlay.Stars(growth)), .72f, -190, false);
             yield return new WaitForSeconds(Settings.ResultSeconds);
             if (GameSession.Active) GameSession.BackToCover();   // จบชุดภารกิจ วนกลับหน้าปก
             else GoPractice();
+        }
+
+        // ตัวช่วยเมื่อต้นไม้ไม่โต: เตือนท่าก่อน ถ้ายังไม่โตอีกก็เปิดตัวช่วย (ชาร์จเร็ว + ส่งคนเดียวไม่โดนลดมาก) จนจบรอบ
+        void TickStall(float dt)
+        {
+            if (growth > lastGrowth + .002f) { lastGrowth = growth; stallTime = 0; }
+            else stallTime += dt;
+            hud.SetStallHint(stallTime >= Settings.StallHintSeconds);
+            if (!assist && stallTime >= Settings.StallAssistSeconds)
+            {
+                assist = true;
+                hud.Popup("ช่วยเร่งพลังให้แล้ว!");
+            }
         }
 
         // ================================================================== ทุกเฟรม
@@ -186,6 +215,7 @@ namespace RTE
         {
             float dt = Time.deltaTime;
             var tracking = TrackingReceiver.I;
+            if (tracking == null || guard == null) return;   // เฟรมที่กำลังสลับฉากจากภารกิจ 1 ยังไม่พร้อม
             bool online = tracking.Connected;
             var players = tracking.Players;
             var keys = Keyboard.current;
@@ -201,6 +231,7 @@ namespace RTE
             if (guard.Tick(players, online)) { GameSession.BackToCover(); return; }
             if (state == State.Practice && skip) StartCoroutine(CountdownThenPlay());
             Autoplay();
+            BotPose();
 
             bool playing = state == State.Play;
             bool[] sending = new bool[2];
@@ -212,7 +243,8 @@ namespace RTE
                 if ((playing || practicing) && !lost)
                 {
                     // ช่วงซ้อมชาร์จเร็วกว่าเกมจริง (~1.5 วิ เต็ม) และส่งได้เฉพาะสเต็ป 2
-                    float rate = practicing ? 1f / SeedPractice.ChargeSeconds : Settings.ChargePerSecond;
+                    float rate = practicing ? 1f / SeedPractice.ChargeSeconds
+                               : Settings.ChargePerSecond * (assist ? Settings.AssistChargeMultiplier : 1f);
                     if (pose == SeedPose.Charge) gauge[i] = Mathf.Min(1, gauge[i] + rate * dt);
                     sending[i] = pose == SeedPose.Push && gauge[i] > 0 && (playing || practiceStep == 2);
                 }
@@ -232,7 +264,8 @@ namespace RTE
 
             bool both = delivered[0] > 0 && delivered[1] > 0;
             bool solo = !both && (delivered[0] > 0 || delivered[1] > 0);
-            float syncMul = both ? Settings.SyncMultiplier : Settings.SoloMultiplier;
+            float syncMul = both ? Settings.SyncMultiplier
+                          : assist ? Mathf.Max(Settings.SoloMultiplier, Settings.AssistSoloMultiplier) : Settings.SoloMultiplier;
             if (both) syncSeconds += dt; else if (solo) soloSeconds += dt;
 
             // Nature Balance: เทียบพลังน้ำกับแสงที่ส่งสำเร็จทั้งหมด (+0.5 ให้ต้นเกมยังถือว่าสมดุล)
@@ -264,9 +297,10 @@ namespace RTE
                     hud.Popup($"ระดับ {stage + 1} • {TreeView.StageName[stage]}!");
                 }
 
-                timeLeft -= dt;
+                timeLeft -= dt; playTime += dt;
+                TickStall(dt);
                 if (growth >= 1) StartCoroutine(Finale());
-                else if (timeLeft <= 0) StartCoroutine(ShowResult(false));
+                else if (Settings.ShowTimer && timeLeft <= 0) StartCoroutine(ShowResult(false));   // ไม่มีเวลาจำกัด = จบเมื่อต้นไม้โตเต็มเท่านั้น
             }
 
             // ---------------- ภาพ
@@ -274,6 +308,7 @@ namespace RTE
             tree.Set(growth, receiving, dt);
             greenery.color = new Color(.55f, 1f, .55f, green * .45f);
             background.color = Color.Lerp(Color.white, new Color(.9f, 1f, .9f), green);
+            finaleBg.color = new Color(1, 1, 1, green);
 
             if (state == State.Practice)
             {
@@ -349,6 +384,30 @@ namespace RTE
                 if (!botSending[i] && (bothFull || (gauge[i] >= 1 && botSending[1 - i])))
                     botSending[i] = i == 0 || Time.time - sendStart[0] > .3f;
                 poses[i].Forced = botSending[i] ? SeedPose.Push : SeedPose.Charge;
+            }
+        }
+
+        // บอต (F3): แต่ละคนชูแขนจนเกจเต็ม -> ผลักเมื่อเห็นเพื่อนผลัก (หรือรอเกินความอดทนของตัวเองก็ส่งเอง) จนเกจหมด
+        //            ความช้า/ท่าหลุดแบบคนจริงอยู่ใน BotPlayer — ที่นี่บอกแค่ "ควรทำท่าอะไร"
+        readonly float[] botFullTime = new float[2];
+        readonly bool[] botSendingNow = new bool[2];
+        void BotPose()
+        {
+            if (!BotPlayer.On || (state != State.Play && state != State.Practice)) return;
+            for (int b = 0; b < 2; b++)
+            {
+                if (!BotPlayer.Controls(b)) continue;
+                BotPlayer.PosePing[b] = Time.unscaledTime;
+                if (state == State.Practice)
+                {
+                    BotPlayer.WantPose[b] = practiceStep == 1 ? (gauge[b] >= 1 ? SeedPose.None : SeedPose.Charge) : SeedPose.Push;
+                    continue;
+                }
+                if (botSendingNow[b] && gauge[b] <= 0) botSendingNow[b] = false;
+                if (gauge[b] < 1) botFullTime[b] = Time.time;
+                if (!botSendingNow[b] && gauge[b] >= 1 && (poses[1 - b].Pose == SeedPose.Push || Time.time - botFullTime[b] > BotPlayer.Patience(b)))
+                    botSendingNow[b] = true;
+                BotPlayer.WantPose[b] = botSendingNow[b] ? SeedPose.Push : SeedPose.Charge;
             }
         }
 

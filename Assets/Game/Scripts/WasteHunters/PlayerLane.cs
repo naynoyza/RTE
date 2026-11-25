@@ -30,6 +30,13 @@ namespace RTE
         public bool Practice;                // โหมดซ้อมก่อนเริ่มเกม
         public bool DidVacuum, DidStep;      // ภารกิจซ้อม 2 อย่าง
         public bool Dusty => dust > 0;
+        /// <summary>WasteEvents ตั้งค่าทุกเฟรม: ป้ายอีเวนต์รวม (FEVER/พายุฝุ่น) กำลังแสดงอยู่ — ป้ายรายฝั่งและคะแนนลอยจะเลื่อนลงไปใต้ป้าย</summary>
+        public bool BannerUp;
+        /// <summary>WasteHunters ตั้งค่าทุกเฟรม: ช่วง FINAL RUSH (ขยะถี่ขึ้น + คะแนนคูณ)</summary>
+        public bool Rush;
+        const float StatusH = 190;   // ความสูงป้ายสถานะ OVERDRIVE / STUNNED (ใช้ช่องเดียวกัน)
+        const float EventY = 140, ToastY = -45, BannerShift = -150;   // ป้ายสถานะอยู่ใต้แถบ HUD ด้านบน, คะแนนลอยอยู่ใต้ป้าย
+        float shiftY;
 
         // อีเวนต์
         const float OverdriveSeconds = 5f, StunSeconds = 2f, DustAutoClear = 12f;
@@ -53,10 +60,11 @@ namespace RTE
         readonly Image beam, crosshair, lockFill, crosshairDot;
         readonly Text hint, toast;
         readonly List<TrashPiece> pieces = new List<TrashPiece>();
+        readonly System.Func<Vector2?> botTarget;   // ส่งให้ BotPlayer (สร้างครั้งเดียว ไม่สร้าง delegate ใหม่ทุกเฟรม)
 
         Vector2 aim;                 // เป้าเล็ง (พิกเซลจากกึ่งกลางจอครึ่ง)
         int hand = -1;               // มือที่ถือปืน 0 ซ้าย / 1 ขวา / -1 ไม่ได้ยก
-        float nextSpawnIn, toastTime;
+        float nextSpawnIn, toastTime, toastDur = 1;
         Vector2 afkAnchor;           // จุดที่เป้าเล็งค้างอยู่ (ใช้ตรวจ AFK)
         float stillTime;             // เป้าเล็งค้างอยู่ใกล้ afkAnchor มากี่วินาทีแล้ว
         bool afk;                    // ค้างนานเกิน -> ดูดไม่ได้จนกว่าจะขยับ
@@ -120,14 +128,15 @@ namespace RTE
             drone.color = Color.clear;
 
             hint = UIKit.Label("RaiseHandHint", view, "ยกมือข้างที่ถนัดขึ้นเพื่อเล็งปืนดูด", 40, new Color(1f, .95f, .6f));
-            hint.rectTransform.anchoredPosition = new Vector2(0, -60);
-            toast = UIKit.Label("Toast", view, "", 54, Color.white);
-            toast.rectTransform.anchoredPosition = new Vector2(0, 160);
+            hint.rectTransform.anchoredPosition = new Vector2(0, -250);   // เหนือปืน ไม่ชนคะแนนลอย
+            toast = UIKit.Label("Toast", view, "", 46, Color.white);
+            toast.rectTransform.anchoredPosition = new Vector2(0, ToastY);
             eventText = UIKit.Label("EventText", view, "", 56, Color.white);
-            eventText.rectTransform.anchoredPosition = new Vector2(0, 265);
+            eventText.rectTransform.anchoredPosition = new Vector2(0, EventY);
             eventImg = UIKit.Img("EventImage", view, null, new Vector2(460, 150), true);
-            eventImg.rectTransform.anchoredPosition = new Vector2(0, 250); eventImg.color = Color.clear;
+            eventImg.rectTransform.anchoredPosition = new Vector2(0, EventY); eventImg.color = Color.clear;
 
+            botTarget = BotTarget;
             walk = new WalkController(settings, slot);
             hud = new PlayerHud(hudParent, slot);
             Reset();
@@ -142,7 +151,7 @@ namespace RTE
             walk.Reset();
             nextSpawnIn = 2; toastTime = 0; stillTime = 0; afk = false; toast.text = "";
             DidVacuum = DidStep = false;
-            feverTime = overdriveTime = stunTime = dust = dustAge = eventTextTime = 0;
+            feverTime = overdriveTime = stunTime = dust = dustAge = eventTextTime = shiftY = 0; BannerUp = Rush = false;
             nextDangerIn = Random.Range(14f, 20f);
             eventText.text = ""; vortex.color = shock.color = dustLayer.color = Color.clear;
             eventImgTime = 0; droneT = -1; eventImg.color = lightning.color = handIcon.color = drone.color = suckFx.color = Color.clear;
@@ -157,6 +166,7 @@ namespace RTE
         {
             float dt = Time.deltaTime;
             bool present = p.present;
+            if (playing && BotPlayer.Controls(slot - 1)) { BotPlayer.AimPing[slot - 1] = Time.unscaledTime; BotPlayer.AimTarget[slot - 1] = botTarget; }
 
             // 1) เดิน: ความเร็วจากการย่ำเท้า -> ถนนเลื่อน
             float metersThisFrame = walk.Tick(p, cameraOnline, playing, dt);
@@ -207,7 +217,7 @@ namespace RTE
                 var t = new TrashPiece(trashLayer, Random.Range(-RoadHalf, RoadHalf) * .9f, settings.TrashScale, settings.HardSlowdown);
                 ImpactSpawned += t.BaseScore;
                 pieces.Add(t);
-                nextSpawnIn = Random.Range(2.2f, 3.8f);
+                nextSpawnIn = Random.Range(2.2f, 3.8f) * (Rush ? settings.RushSpawnScale : 1f);
             }
         }
 
@@ -251,7 +261,7 @@ namespace RTE
         public void StartOverdrive()
         {
             overdriveTime = OverdriveSeconds;
-            ShowEventImage("fx/overdrive_tx", new Vector2(420, 136), 2.2f);
+            ShowEventImage("ui2/overdrive", new Vector2(StatusH * 3.04f, StatusH), 2.2f);   // ตำแหน่ง/ความสูงเดียวกับ STUNNED
         }
 
         // ป้ายอีเวนต์แบบรูป (เด้งขยายแล้วค้าง)
@@ -261,11 +271,21 @@ namespace RTE
             eventImg.rectTransform.sizeDelta = size; eventImgTime = seconds;
         }
 
-        void ShowEvent(string text, Color c, float seconds) { eventText.text = text; eventText.color = c; eventTextTime = seconds; }
+        void ShowEvent(string text, Color c, float seconds) { eventImgTime = 0; eventText.text = text; eventText.color = c; eventTextTime = seconds; }
 
         // ทุกเฟรม: นับเวลาอีเวนต์ของฝั่งนี้ และวาดเอฟเฟกต์
         void TickEvents(bool playing, float dt)
         {
+            // ป้ายรายฝั่ง + คะแนนลอย หลบลงใต้ป้ายอีเวนต์รวมขณะที่ป้ายนั้นแสดงอยู่ (ไม่ให้ข้อความซ้อนกัน)
+            shiftY = Mathf.MoveTowards(shiftY, BannerUp ? BannerShift : 0, dt * 900);
+            eventImg.rectTransform.anchoredPosition = eventText.rectTransform.anchoredPosition = new Vector2(0, EventY + shiftY);
+            // คะแนนลอย: ค่อย ๆ ลอยขึ้นและจางหาย
+            //   (คำเตือนที่ส่งซ้ำทุกเฟรม toastDur สั้น = อยู่นิ่งและทึบ)
+            bool floating = toastDur > .5f;
+            float rise = floating ? 1 - Mathf.Clamp01(toastTime / toastDur) : 0;
+            toast.rectTransform.anchoredPosition = new Vector2(0, ToastY + shiftY + rise * 55);
+            var tc = toast.color; tc.a = floating ? Mathf.Clamp01(toastTime / .35f) : 1; toast.color = tc;
+
             if (eventTextTime > 0 && (eventTextTime -= dt) <= 0) eventText.text = "";
             eventText.rectTransform.localScale = Vector3.one * (1 + .05f * Mathf.Sin(Time.time * 10));
             if (feverTime > 0) feverTime -= dt;
@@ -325,7 +345,7 @@ namespace RTE
                 dustAge += dt;
                 if (hand >= 0) dust -= Mathf.Abs(aim.x - lastAimX) / 2600f;
                 if (dustAge > DustAutoClear) dust -= dt;
-                if (dust <= .05f) { dust = 0; ShowEventImage("fx/visor_tx", new Vector2(460, 88), 1.8f); }
+                if (dust <= .05f) { dust = 0; ShowEventImage("fx/visor_tx", new Vector2(580, 111), 1.8f); }
             }
             lastAimX = aim.x;
             dustLayer.color = new Color(.78f, .5f, .25f, .82f * dust);
@@ -362,6 +382,16 @@ namespace RTE
                 if (d < HitRadius && d < bestDist) { best = t; bestDist = d; }
             }
             return best;
+        }
+
+        // บอต: ขยะดี (ไม่ช็อต) ที่ใกล้ผู้เล่นที่สุด -> ตำแหน่ง 0..1 ของจอตัวเอง
+        Vector2? BotTarget()
+        {
+            TrashPiece best = null;
+            foreach (var t in pieces)
+                if (!t.Danger && t.SuckProgress < 0 && t.Drop <= 0 && (best == null || t.Z < best.Z)) best = t;
+            if (best == null) return null;
+            return new Vector2(best.ScreenPos.x / LaneW + .5f, best.ScreenPos.y / LaneH + .5f);
         }
 
         float HitRadius => settings.HitRadiusPx * (overdriveTime > 0 ? 2.4f : 1f);
@@ -407,7 +437,7 @@ namespace RTE
             {
                 stunTime = StunSeconds; Combo = 0; overdriveTime = 0;
                 Score = Mathf.Max(0, Score - TrashCatalog.DangerPenalty);
-                ShowEventImage("fx/stunned_tx", new Vector2(400, 92), StunSeconds);
+                ShowEventImage("ui2/stunned", new Vector2(StatusH * 2.88f, StatusH), StunSeconds);
                 ShowToast($"-{TrashCatalog.DangerPenalty}  โดนไฟช็อต!", new Color(1f, .4f, .4f));
                 RefreshHud(); return;
             }
@@ -415,6 +445,7 @@ namespace RTE
             Combo++;
             int bonus = TrashCatalog.ComboBonus(Combo);
             int mult = feverTime > 0 ? 2 : 1;                              // DUMP FEVER = คะแนน x2
+            if (Rush) mult = Mathf.Max(mult, settings.RushScoreMultiplier);  // FINAL RUSH (ไม่ซ้อนกับ FEVER)
             Score += (t.Points + bonus) * mult; Recycled++; ImpactCollected += t.BaseScore;
             if (Combo % 8 == 0) StartOverdrive();
             ShowToast($"{(mult > 1 ? "2X " : "")}+{t.Points * mult}{(bonus > 0 ? $"  COMBO x{Combo} +{bonus}" : "")}\n{t.Kind.Name}{(t.IsRare ? "  ✦RARE" : "")}",
@@ -467,8 +498,8 @@ namespace RTE
             else if (p.dist > 0 && p.dist < 1.3f) ShowToast("ใกล้กล้องเกินไป\nถอยหลังหน่อย", new Color(1f, .8f, .3f), .1f);
         }
 
-        void ShowToast(string text, Color c, float seconds = 1.4f) { toast.text = text; toast.color = c; toastTime = seconds; }
+        void ShowToast(string text, Color c, float seconds = 1.4f) { toast.text = text; toast.color = c; toastTime = toastDur = seconds; }
 
-        void RefreshHud() => hud.SetNumbers(Score, Recycled, settings.Goal);
+        void RefreshHud() => hud.SetNumbers(Score, Recycled);
     }
 }

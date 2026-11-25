@@ -5,7 +5,7 @@
 // ใต้กรอบแต่ละฝั่งมีสถานะ: รอ / ใกล้-ไกลเกินไป / มาแล้ว ✓
 // ครบ 2 คนค้าง HoldSeconds -> Tick() คืน true (ไปหน้าเลือกตัวละคร)
 // ไม่มีกล้อง: Space = ข้าม
-// ดึงข้อมูล: StreamingAssets/intro.mp4, Resources/Sprites/intro/ui0.png
+// ดึงข้อมูล: StreamingAssets/intro.mp4, Resources/Sprites/ui2/cover_frame.png
 // =====================================================================================================
 using UnityEngine;
 using UnityEngine.UI;
@@ -26,7 +26,8 @@ namespace RTE
         readonly Image[] check = new Image[2];
         float alpha, bothTime, shownAt;
 
-        static readonly Color Orange = new Color(1f, .6f, .15f), Cyan = new Color(.2f, .95f, 1f);
+        static readonly Color Cyan = new Color(.2f, .95f, 1f);                       // สีหัวข้อหน้าปก (ไม่ใช่สีผู้เล่น)
+        static Color PColor(int i) => GameSettings.PlayerColors[i];   // P1 ฟ้า, P2 ส้ม — ตรงกับกรอบ ui2/cover_frame
 
         public IntroCover(Transform canvas, GameObject videoHost)
         {
@@ -50,16 +51,16 @@ namespace RTE
             uiGroup = ui.gameObject.AddComponent<CanvasGroup>();
             var dim = UIKit.Img("Dim", ui, null, Vector2.zero, false); UIKit.Stretch(dim.rectTransform);
             dim.color = new Color(0, 0, 0, .45f);
-            var frame = UIKit.Img("Frame", ui, UIKit.Load("intro/ui0"), new Vector2(1920, 1072), true);
+            var frame = UIKit.Img("Frame", ui, UIKit.Load("ui2/cover_frame"), new Vector2(1920, 1072), false);   // กรอบซ้ายฟ้า/ขวาส้ม
 
-            title = UIKit.Label("Title", ui, "2 PLAYERS REQUIRED", 64, Cyan);
-            title.rectTransform.anchoredPosition = new Vector2(0, 430);
+            title = UIKit.Label("Title", ui, "2 PLAYERS REQUIRED", 58, Cyan);
+            title.rectTransform.anchoredPosition = new Vector2(0, 462);   // กลางแถบด้านบนของกรอบ ui2/cover_frame
             sub = UIKit.Label("Sub", ui, "เชิญยืนหน้ากล้องเซนเซอร์ (ห่าง 2 – 3 เมตร) เพื่อเริ่มกอบกู้โลก", 34, Color.white);
             sub.rectTransform.anchoredPosition = new Vector2(0, 365);
 
             for (int i = 0; i < 2; i++)
             {
-                var c = i == 0 ? Orange : Cyan;
+                var c = PColor(i);
                 float x = i == 0 ? -455 : 455;
                 statusBox[i] = UIKit.Panel($"StatusBox{i + 1}", ui, new Vector2(520, 120), new Color(0, 0, 0, .65f));
                 statusBox[i].rectTransform.anchoredPosition = new Vector2(x, -255);
@@ -116,7 +117,7 @@ namespace RTE
             else if (online && p.approach > 0) text = who + "ตรวจจับ... ยืนนิ่ง ๆ";
             else text = who + "ตรวจจับ...\n(WAITING...)";
             status[i].text = text;
-            status[i].color = ready ? Color.green : (i == 0 ? Orange : Cyan);
+            status[i].color = ready ? Color.green : PColor(i);
             check[i].color = ready ? new Color(.3f, 1f, .4f, .9f) : new Color(1, 1, 1, .12f + .1f * Mathf.Sin(Time.time * 4));
             check[i].rectTransform.localScale = Vector3.one * (ready ? 1 + .04f * Mathf.Sin(Time.time * 6) : 1);
         }

@@ -1,0 +1,37 @@
+{
+  "id": "01a210aa-6bbf-7427-87d1-4169b40f068d",
+  "type": "image-to-3d",
+  "name": "",
+  "art_style": "",
+  "object_prompt": "",
+  "style_prompt": "",
+  "negative_prompt": "",
+  "texture_prompt": "Cute sci-fi handheld vacuum cleaner gripped firmly by a white space suit glove, fingers wrapped around the handle. Glossy white and dark grey plastic, bright glowing orange light strips and rings, transparent glowing orange dust tank with green leaves and white debris inside, glowing orange leaf emblem on the side, dark grey ribbed hose looping from the back, white sleeve with orange glowing bands.",
+  "texture_image_url": "",
+  "text_style_prompt": "",
+  "image_style_url": "",
+  "status": "SUCCEEDED",
+  "created_at": 1795575937954,
+  "progress": 100,
+  "started_at": 1795575937965,
+  "finished_at": 1795576042512,
+  "expires_at": 1795835242512,
+  "task_error": null,
+  "model_url": "https://assets.meshy.ai/fce2ff06-0b81-4f1b-a5c3-bfe4c8487ffd/tasks/01a210aa-6bbf-7427-87d1-4169b40f068d/output/model.glb?Expires=1795835242&Signature=UjAX20fmZN1xmVEmVZn9ofW-JVr~dyqM3ZSXq8f1uBQU4KFC037EqIFz7yUlt1cxPkzkZnqgAp4PkHB1nG4c2uHMLnYDa~svKs5FsXEggYUq2gsrzc~0oxe-0VynxEQAYyP~Jl9nSzzymnkh8DhqnbwdiCujJ-YM22LY2LYbtSKD4F3uSefunVJJ251NUY6hgX7O3Ajb15liyXEgjU-hu-U7Xf2MHrj82ses~LZpczSEQ90LOcOVnd9OOdS53ODQE6TwPh1hV3mjOBBil7b6xb23ygeplLBGMLi1~X38aRea0d~ojvsHaF10gH8LH33bMbCC5iTFWyNBrC3JdAMnRQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/fce2ff06-0b81-4f1b-a5c3-bfe4c8487ffd/tasks/01a210aa-6bbf-7427-87d1-4169b40f068d/output/model.glb?Expires=1795835242&Signature=UjAX20fmZN1xmVEmVZn9ofW-JVr~dyqM3ZSXq8f1uBQU4KFC037EqIFz7yUlt1cxPkzkZnqgAp4PkHB1nG4c2uHMLnYDa~svKs5FsXEggYUq2gsrzc~0oxe-0VynxEQAYyP~Jl9nSzzymnkh8DhqnbwdiCujJ-YM22LY2LYbtSKD4F3uSefunVJJ251NUY6hgX7O3Ajb15liyXEgjU-hu-U7Xf2MHrj82ses~LZpczSEQ90LOcOVnd9OOdS53ODQE6TwPh1hV3mjOBBil7b6xb23ygeplLBGMLi1~X38aRea0d~ojvsHaF10gH8LH33bMbCC5iTFWyNBrC3JdAMnRQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "fbx": "https://assets.meshy.ai/fce2ff06-0b81-4f1b-a5c3-bfe4c8487ffd/tasks/01a210aa-6bbf-7427-87d1-4169b40f068d/output/model.fbx?Expires=1795835242&Signature=ON4lO7XLfoTUi8OcjyL4BbONZwiw0~Xa4N4OA2tPcK9PApj6asjgxfoIH5JfmIiWcTq-Ue9sNFWSXiqcg6PffOjZdYH1tICSDRvMaUDS5LS2hQKoMFcPv4Fc5gwKnm24nyjmv4HCUT2DATypoyV1Rg9Gr0wHwSQ09ljcZAzQe17SJEYgmIrxt3KLdjmwEvr6dMjr5lcGS4Y4eFKVVOOU0xNOIHZFjicKepYVQM1RY8EqVXNMvdGfx4BEt0Y8y-IsdmwG83K-0xb1sVLpwKhziJa81GI-wePGLRUXmieT1VqJJt5xtSIrNS9P6ZRkb9i4SzGwe8bg471es8vC7G6x8A__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "thumbnail_url": "https://assets.meshy.ai/fce2ff06-0b81-4f1b-a5c3-bfe4c8487ffd/tasks/01a210aa-6bbf-7427-87d1-4169b40f068d/output/preview.png?Expires=1795835242&Signature=BBWQFhDgr6NkTKmb-aQlj~0KZYuLX4dSeuGb8MXPC3DxMuoYnTNet9SifQqamhFevILFBkM~UmklLTVXQ4y~03Puwog1Pv4ntvy30zwzkWVyLPkhkKikRh2IF8hYhpSCGMvVNiYpGboIlS0nJFq7Uq4XqU89UUIdakiouKa2cSZvzjxeAjmK9xhUVoEBrL33Qr0HB4jQj1FTtSrebd21TcMGoSGSd3eg0edOPwoj94O~JS8qOcF56rhu2AjyETEQcZLCyu8af0a2P9LpaccPL0GzVBIVCya75LbeccJb3XXEDYgr9Y5p3TZKJkXQM3V2RYGd0A3kRsn4z1DAdQZuRg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "texture_urls": [
+    {
+      "base_color": "https://assets.meshy.ai/fce2ff06-0b81-4f1b-a5c3-bfe4c8487ffd/tasks/01a210aa-6bbf-7427-87d1-4169b40f068d/output/texture_0.png?Expires=1795835242&Signature=jFv7Rz4aZ0C5b8pNqJgP5aSPWYuV8~0jZ3ActrhRQtNdGO4z5iyWzzjztM2~-wCk4TY4AWYxz0nnezEROMJtZeS5daNLfxxBJ~yC40L3gQh~r38fqnMjS7mP-VRL2Ux7xYi0w57vBDVEoDCZ8~t8Qcpp~3MpBR-vyD8zF9jS63~1SdfY4Hduq-cduAoIEI~bFNVOuwxs5dOfqiNNnN5N8bJnJlEmhhiK2NJkAXfNAIxGjAOkdnbn1sc63jiUsNSCSlbdDaNXEMvUWRRjlSKRbp8iA86ZqUxxfwj2IAWFcSOOpYaSMln2eQMlMN~ZJUKQF1nw-Fw9GiTwazo1hhhFEg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "metallic": "https://assets.meshy.ai/fce2ff06-0b81-4f1b-a5c3-bfe4c8487ffd/tasks/01a210aa-6bbf-7427-87d1-4169b40f068d/output/texture_0_metallic.png?Expires=1795835242&Signature=LKiMz3WRYhsFqyciPu~MuTaCvS1Nrxoin7pLX~WcFmESsOc27XjyUxHtkEFiJPQ53Agb80pGXfqryhdY44RBmIwcoZg33cc6KlVdK6oJ4selLRtYnVXVAwv1kmCAVmtSpCh4hP57gwd1Gi9TQTGU1RhQWMezFKHOEnV9WTK3P4FsNqzgQ0vhua9S2LYh~q9JYekErb9QE6ZmrQJm7rYuOVkbKkfH1VynurT2obrngeRCot8iA-QRdWxPTiDu14aftQR1hPS~qiyfWgDsk2Eioy67t0OfJYZVltb7GBkZg7xKTW2B2~8K6da7y5K1HGZhSaQ5ELthvXA6pe6oh3TSfA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "roughness": "https://assets.meshy.ai/fce2ff06-0b81-4f1b-a5c3-bfe4c8487ffd/tasks/01a210aa-6bbf-7427-87d1-4169b40f068d/output/texture_0_roughness.png?Expires=1795835242&Signature=iWOY~69k-paZ2bRBOB~4uez7GuByG4DkNbu~d1dJ9-QytC5Yn4GSx6YmCFGqBzVtWbH4HuCw79d7z5rEMNg3uqwO~k39TUNpLpVV71XR9afS3u9OBgKOsz9ima~3P0NgH6TsPmgZabJHw2vDvSIEIrCruf78iCv~WBCotUQeiV74udaE5fG3Nb10q5GDbEt0tj59cppWmrkarhdLsainC3rUWqr4i6WHFniDBKQDTyJzatYQN8LWzvNHSuNfx0L5cp80TF8ARWFADxCmX3Or4gP4lywpaKuMJmfT7hjVH7~xO2oU0mOc~HypqQDR1p65b9Xn6ED63d3Wgiv8uLAn2A__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "normal": "https://assets.meshy.ai/fce2ff06-0b81-4f1b-a5c3-bfe4c8487ffd/tasks/01a210aa-6bbf-7427-87d1-4169b40f068d/output/texture_0_normal.png?Expires=1795835242&Signature=UalFI9xnz7RV6M-uTpEPFxokrSQoGpih3X8yLY6geyLfBG8wcuOKMq-agccfX9FfbXHlbeFysFiP51Jot-IjPg49AjC5rPksqub~ZLFpPvKEYXaxi4HnpD0XV3AsF~riEz72uNQvHsY7EAhGuUiiq04cwiSwUovEd0LpNaTDk3DDDSOHCWD~0pQai~ujtagk3Swl4Jyeb-qPpeLIBQJq6xnLh9iahxfxDi0y774tXDimPRtpcKKA-VGPuT8FlKWUCNKnmRhoywWW~0gcJd4S6UqvxICGDUgKcAYd7hsQ77wa20NwZPuz7NLCV5gwVYMixmAT8Vj6XIwJTSqD70BboA__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    }
+  ],
+  "hd_texture": true,
+  "texture_resolution": "4k",
+  "consumed_credits": 30
+}

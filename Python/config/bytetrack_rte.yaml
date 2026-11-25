@@ -1,0 +1,9 @@
+# ByteTrack settings for the RTE tracker (ultralytics). Same as the default bytetrack.yaml except
+# track_buffer: a person hidden for up to 2 s (60 frames at 30 fps) keeps the same id.
+tracker_type: bytetrack
+track_high_thresh: 0.25   # first-association confidence
+track_low_thresh: 0.1     # second-association confidence (low-score boxes, e.g. partly hidden people)
+new_track_thresh: 0.25    # confidence to start a new track
+track_buffer: 60          # frames a lost track is kept
+match_thresh: 0.8         # IoU matching threshold
+fuse_score: True

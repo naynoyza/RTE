@@ -49,3 +49,17 @@ desktop.ini
 
 # ค่าคาลิเบรตกล้องของแต่ละเครื่อง (กด C/D ในหน้าต่าง tracker สร้างเอง)
 Python/calibration.json
+
+# ---------- Claude Code Game Studios (local/runtime) ----------
+.claude/settings.local.json
+CLAUDE.local.md
+project.local.yaml
+production/session-logs/
+production/session-state/
+.scratch/
+.claude/agent-memory/
+.claude/worktrees/
+docs/consistency-failures.md
+/test-results/
+# ต้นฉบับ template (มี .git ของตัวเอง) — ไม่ต้อง commit
+/Claude-Code-Game-Studios/

@@ -1,0 +1,105 @@
+{
+  "schema_version": 2,
+  "project_name": "gun_p1_blue",
+  "folder": "20261125_095652_gun-p1-blue_01a210a2",
+  "root_task_id": "01a210a2-326d-72db-b6b2-c83c9e07ccb3",
+  "created_at": "2026-11-25T02:56:52.433Z",
+  "updated_at": "2026-11-25T03:04:09.896Z",
+  "tasks": [
+    {
+      "task_id": "01a210a2-326d-72db-b6b2-c83c9e07ccb3",
+      "task_type": "image-to-3d",
+      "resource": "image-to-3d",
+      "endpoint": "/openapi/v1/image-to-3d",
+      "stage": "geometry",
+      "parent_task_id": null,
+      "status": "SUCCEEDED",
+      "files": [],
+      "task_json": "task_01a210a2-326d-72db-b6b2-c83c9e07ccb3.json",
+      "operation_id": null,
+      "created_at": "2026-11-25T02:58:28.205Z",
+      "updated_at": "2026-11-25T02:58:28.205Z"
+    },
+    {
+      "task_id": "01a210a2-326d-72db-b6b2-c83c9e07ccb3",
+      "task_type": "image-to-3d",
+      "resource": "image-to-3d",
+      "endpoint": "/openapi/v1/image-to-3d",
+      "stage": "preview",
+      "parent_task_id": null,
+      "status": "SUCCEEDED",
+      "files": [
+        "preview.png"
+      ],
+      "task_json": null,
+      "operation_id": null,
+      "created_at": "2026-11-25T02:58:40.467Z",
+      "updated_at": "2026-11-25T02:58:40.467Z"
+    },
+    {
+      "task_id": "01a210a2-326d-72db-b6b2-c83c9e07ccb3",
+      "task_type": "image-to-3d",
+      "resource": "image-to-3d",
+      "endpoint": "/openapi/v1/image-to-3d",
+      "stage": "delivered",
+      "parent_task_id": null,
+      "status": "SUCCEEDED",
+      "files": [
+        "fbx/model.fbx"
+      ],
+      "task_json": null,
+      "operation_id": null,
+      "created_at": "2026-11-25T02:59:44.094Z",
+      "updated_at": "2026-11-25T02:59:44.094Z"
+    },
+    {
+      "task_id": "01a210a7-cc9f-7194-b3db-c3a01d10b8d7",
+      "task_type": "retexture",
+      "resource": "retexture",
+      "endpoint": "/openapi/v1/retexture",
+      "stage": "retexture-orange",
+      "parent_task_id": "01a210a2-326d-72db-b6b2-c83c9e07ccb3",
+      "status": "SUCCEEDED",
+      "files": [],
+      "task_json": "task_01a210a7-cc9f-7194-b3db-c3a01d10b8d7.json",
+      "operation_id": "2970382d-8f86-4035-b1f3-f9d247157b02",
+      "created_at": "2026-11-25T03:02:44.153Z",
+      "updated_at": "2026-11-25T03:03:56.152Z"
+    },
+    {
+      "task_id": "01a210a2-326d-72db-b6b2-c83c9e07ccb3",
+      "task_type": "image-to-3d",
+      "resource": "image-to-3d",
+      "endpoint": "/openapi/v1/image-to-3d",
+      "stage": "textures",
+      "parent_task_id": null,
+      "status": "SUCCEEDED",
+      "files": [
+        "tex/gun_p1_base_color.png",
+        "tex/gun_p1_metallic.png",
+        "tex/gun_p1_roughness.png",
+        "tex/gun_p1_normal.png"
+      ],
+      "task_json": null,
+      "operation_id": null,
+      "created_at": "2026-11-25T03:03:10.935Z",
+      "updated_at": "2026-11-25T03:03:33.959Z"
+    },
+    {
+      "task_id": "01a210a7-cc9f-7194-b3db-c3a01d10b8d7",
+      "task_type": "retexture",
+      "resource": "retexture",
+      "endpoint": "/openapi/v1/retexture",
+      "stage": "preview",
+      "parent_task_id": null,
+      "status": "SUCCEEDED",
+      "files": [
+        "preview_orange.png"
+      ],
+      "task_json": null,
+      "operation_id": null,
+      "created_at": "2026-11-25T03:04:09.896Z",
+      "updated_at": "2026-11-25T03:04:09.896Z"
+    }
+  ]
+}

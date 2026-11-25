@@ -7,9 +7,9 @@ if not exist venv (
 )
 call venv\Scripts\activate.bat
 python -m pip install --upgrade pip
+@rem PyTorch with CUDA (NVIDIA GPU). No NVIDIA card? it still runs on CPU, just slower.
+python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
 python -m pip install -r requirements.txt
-@rem download the MediaPipe lite pose model now (needs internet once) so the tracker also works offline
-python -c "import mediapipe as mp; mp.solutions.pose.Pose(model_complexity=0).close(); print('MediaPipe pose model ready')"
 echo.
-echo Done. Run run_tracker.bat
+echo Done. Run run_tracker.bat  (first run downloads models\yolo11n-pose.pt and models\hand_landmarker.task)
 pause

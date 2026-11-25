@@ -103,12 +103,22 @@ namespace RTE
             t.verticalOverflow = VerticalWrapMode.Overflow;
             t.raycastTarget = false;
             t.text = text;
-            var shadow = rt.gameObject.AddComponent<Shadow>();
-            shadow.effectColor = new Color(0, 0, 0, .6f); shadow.effectDistance = new Vector2(2, -2);
+            // ขอบตัวอักษรเข้ม (สไตล์เดียวกับป้ายภาพในเกม อ่านออกทั้งบนพื้นสว่างและมืด)
+            // ใช้ Outline ซึ่งเป็นลูกของ Shadow: โค้ดเดิมที่เรียก GetComponent<Shadow>() ยังปรับค่าได้เหมือนเดิม
+            var outline = rt.gameObject.AddComponent<Outline>();
+            outline.effectColor = new Color(.03f, .05f, .1f, .9f);
+            outline.effectDistance = new Vector2(Mathf.Clamp(size / 18f, 1.5f, 4f), -Mathf.Clamp(size / 18f, 1.5f, 4f));
             return t;
         }
 
         // วางชิ้น UI ชิดจุดยึด (เช่น (0,1) = มุมบนซ้าย) แล้วเลื่อนออกมา pos พิกเซล
+        /// <summary>ใส่ขอบตัวอักษรหนา (อ่านออกบนพื้นหลังทุกแบบ) — ตัวอย่าง: UIKit.Outline(label, Color.black, 3)</summary>
+        public static void Outline(Text t, Color color, float width = 3)
+        {
+            var o = t.GetComponent<Outline>() ?? t.gameObject.AddComponent<Outline>();
+            o.effectColor = color; o.effectDistance = new Vector2(width, -width);
+        }
+
         public static void Anchor(RectTransform rt, Vector2 anchor, Vector2 pos)
         {
             rt.anchorMin = rt.anchorMax = rt.pivot = anchor;

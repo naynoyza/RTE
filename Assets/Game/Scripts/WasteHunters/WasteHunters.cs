@@ -4,7 +4,7 @@
 // หน้าที่ : สร้าง Canvas และทุกหน้าจอ แล้วสลับหน้าจอตามสถานะของเกม
 //
 //   Cover (วิดีโอ + UI 0, รอครบ 2 คน) ──> Select (ยกแขนเลือกตัวละคร, นับ 3 วิ, ซูม cinematic)
-//     ──> Practice (สอนเล่นซ้อนบนฉากจริง: ซ้อมดูด 1 ชิ้น + ย่ำเท้า, READY ทั้งคู่ / 15 วิ) ──> Countdown ──> Play ──(หมดเวลา/ถึงเป้า)──> Result ──(10 วิ)──> Cover
+//     ──> Practice (สอนเล่นซ้อนบนฉากจริง: ซ้อมดูด 1 ชิ้น + ย่ำเท้า, READY ทั้งคู่ / 15 วิ) ──> Countdown ──> Play ──(หมดเวลา)──> Result ──(10 วิ)──> Cover
 //
 // ดึงข้อมูล: TrackingReceiver.I.Players (ข้อมูล P1/P2 จากกล้อง) และค่าปรับเกมใน Settings
 // ส่งต่อ  : แต่ละเฟรมส่งข้อมูลผู้เล่นให้ PlayerLane ของคนนั้นไปจัดการเดิน/เล็ง/เก็บขยะ
@@ -145,6 +145,7 @@ namespace RTE
         IEnumerator ShowResultThenCover()
         {
             state = State.Result;
+            hudRoot.SetActive(false);                     // ซ่อนคะแนน/เวลา ไม่ให้ทับหน้าสรุปผล
             overlay.ShowResult(lanes[0], lanes[1]);
             yield return new WaitForSeconds(10f);
             if (GameSession.Active) UnityEngine.SceneManagement.SceneManager.LoadScene(GameSession.Game2Scene);   // ไปเกม 2
@@ -155,6 +156,7 @@ namespace RTE
         void Update()
         {
             var tracking = TrackingReceiver.I;
+            if (tracking == null || select == null) return;   // เฟรมที่กำลังสลับฉาก/ออกจาก Play mode
             bool online = tracking.Connected;
             var players = tracking.Players;
             var keys = Keyboard.current;
@@ -184,7 +186,11 @@ namespace RTE
                     timeLeft -= Time.deltaTime;
                     timer.Set(timeLeft);
                     events.Tick(Settings.RoundSeconds - timeLeft, lanes);
-                    if (timeLeft <= 0 || lanes[0].Recycled >= Settings.Goal || lanes[1].Recycled >= Settings.Goal)
+                    bool rush = timeLeft <= Settings.RushSeconds;      // FINAL RUSH: วินาทีท้าย ๆ ขยะถี่ขึ้น + คะแนนคูณ
+                    if (rush && !lanes[0].Rush) events.StartRush(Settings);
+                    foreach (var l in lanes) l.Rush = rush;
+                    timer.SetRush(rush);
+                    if (timeLeft <= 0)
                         StartCoroutine(ShowResultThenCover());
                     break;
             }

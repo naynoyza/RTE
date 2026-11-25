@@ -16,7 +16,8 @@ namespace RTE
     public class SeedSettings
     {
         [Header("รอบเกม")]
-        public float RoundSeconds = 120f;       // เวลาต่อรอบ
+        public float RoundSeconds = 120f;       // เวลาต่อรอบ (ใช้เมื่อ ShowTimer เปิด)
+        public bool ShowTimer = false;          // มีเวลาจำกัดไหม (ปิด = ไม่จับเวลาเลย เล่นจนต้นไม้โตเต็มแล้วจบ)
         public float StandbyHold = 2f;          // ครบ 2 คนค้างกี่วินาทีจึงเริ่ม
         public float StandbyEmpty = 8f;         // (ใช้กับหน้าจุดยืน) ไม่มีใครกี่วินาที
         public float ResultSeconds = 12f;       // หน้าสรุปผลค้างกี่วินาที
@@ -35,6 +36,12 @@ namespace RTE
         public float BalanceMinMultiplier = .6f;   // น้ำ/แสงไม่สมดุลสุด ๆ
         public float BalanceMaxMultiplier = 1.25f; // สมดุลพอดี (โบนัส)
         [Range(0, 1)] public float BalancedRatio = .8f; // น้อย/มาก ≥ ค่านี้ = ถือว่า "สมดุล"
+
+        [Header("ตัวช่วยเมื่อต้นไม้ไม่โต (ไม่มีเวลาจำกัด จึงต้องกันรอบค้าง)")]
+        public float StallHintSeconds = 12f;        // ต้นไม้ไม่โตนานเท่านี้ = ขึ้นการ์ดเตือนท่า (V -> ผลัก)
+        public float StallAssistSeconds = 25f;      // ไม่โตนานเท่านี้ = เปิดตัวช่วยจนจบรอบ
+        public float AssistChargeMultiplier = 1.8f; // ตัวช่วย: ชาร์จพลังเร็วขึ้นกี่เท่า
+        [Range(0, 1)] public float AssistSoloMultiplier = .8f;   // ตัวช่วย: ส่งคนเดียวก็โตเกือบเต็มอัตรา
 
         [Header("ตรวจท่า (จากจุดกระดูก YOLO 17 จุด)")]
         public float ChargeSpread = 1.0f;       // ท่า V: ข้อมือห่างกัน > ความกว้างไหล่ x ค่านี้ และสูงกว่าจมูก

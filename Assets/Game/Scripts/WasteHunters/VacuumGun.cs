@@ -1,11 +1,13 @@
 // =====================================================================================================
 // VacuumGun — ปืนดูดฝุ่น 3D ในมือผู้เล่น 1 คน
 // -----------------------------------------------------------------------------------------------------
-// หน้าที่ : ประกอบโมเดลปืนจากชิ้นรูปทรงพื้นฐาน (ตัวปืน ปากดูด ใบพัด ถังฝุ่นเรืองแสง ด้าม มือ สายท่อ)
+// หน้าที่ : แสดงโมเดลแขน+ปืนจาก Meshy (Resources/Models/gun_p{slot}.fbx + gun_p{slot}_mat)
+//           ถ้าไม่มีไฟล์ ใช้ปืนที่ประกอบจากชิ้นรูปทรงพื้นฐานแทน (ตัวปืน ปากดูด ใบพัด ถังฝุ่นเรืองแสง ด้าม มือ สายท่อ)
 //           มีกล้องของตัวเองถ่ายปืนลง RenderTexture (พื้นหลังโปร่งใส) แล้วแสดงทับจอผู้เล่นด้วย RawImage
 //           • ยกมือซ้าย = ปืนอยู่มุมล่างซ้าย, มือขวา = มุมล่างขวา, ไม่ยก = ปืนลดลง
 //           • หันปากปืนตามเป้าเล็ง (จำกัดมุมให้ดูเหมือนถืออยู่ตลอด)
-//           • ตอนดูด ใบพัดหมุนเร็ว ถังเรืองแสงแรงขึ้น ปืนสั่นเล็กน้อย
+//           • ตอนดูด ไฟสีผู้เล่นสว่างขึ้น (ปืนรูปทรงพื้นฐาน: ใบพัดหมุนเร็ว ถังเรืองแสง) ปืนสั่นเล็กน้อย
+//           • โมเดล Meshy เป็นมือข้างเดียว (NativeSide) — ถือด้วยมืออีกข้างจะกลับด้านซ้าย-ขวาให้
 // ดึงข้อมูล: ตำแหน่งเป้าเล็ง + มือที่ใช้ + กำลังดูดไหม (จาก PlayerLane)
 // ส่งออก  : NozzleLocal = ตำแหน่งปากปืนบนจอ (จุดเริ่มลำแสงและจุดที่ขยะลอยเข้า)
 // =====================================================================================================
@@ -19,8 +21,17 @@ namespace RTE
         readonly Camera cam;
         readonly Transform root, fan, nozzleTip;
         readonly Material glowMat;
+        readonly Light fillLight;
         readonly Color col;
         float side = 1, sideTarget = 1, raise, suck, fanAngle;
+
+        // ---- โมเดล Meshy (ปรับได้ที่นี่)
+        Transform model, mirror;                                // mirror = จุดหมุนสำหรับกลับด้านซ้าย-ขวา
+        int nativeSide = 1;                                     // โมเดลเป็นมือขวา (+1) หรือซ้าย (-1)
+        static readonly Vector3 ModelEuler = new Vector3(0, -90, 0); // ปากปืนในไฟล์ชี้ +X -> หมุนให้ชี้ +Z
+        const float ModelLength = .68f;                         // ความยาวทั้งชิ้น ปืน+แขน (เมตร) — ทดสอบในเกมแล้ว ใหญ่กว่านี้บังจอ
+        static readonly Vector2 GripAt = new Vector2(.12f, -.12f);   // จุดจับ เทียบกลางชิ้น (สัดส่วน: แกนยาว, แกนสูง)
+        static readonly Vector2 NozzleAt = new Vector2(.5f, .12f);   // ปากปืน เทียบกลางชิ้น (สัดส่วน)
 
         const float W = 960, H = 1080;
 
@@ -48,14 +59,18 @@ namespace RTE
             var fill = new GameObject("GunFill").AddComponent<Light>();
             fill.type = LightType.Point; fill.range = 3; fill.intensity = 1.2f; fill.color = col;
             fill.transform.position = origin + new Vector3(-.4f, -.2f, .6f);
+            fillLight = fill;
 
             // ---------------- model (metres; +Z = nozzle direction, pivot = top of the grip)
             root = new GameObject($"P{slot}VacuumGun").transform;
+            glowMat = Mat(col, 0, .9f); glowMat.EnableKeyword("_EMISSION");
+            nozzleTip = new GameObject("NozzleTip").transform; nozzleTip.SetParent(root, false);
+            if (BuildMeshyModel(slot)) { root.position = origin; return; }
+
             var metal = Mat(new Color(.42f, .40f, .38f), .85f, .55f);
             var dark = Mat(new Color(.13f, .13f, .14f), .2f, .35f);
             var accent = Mat(col, .3f, .6f);
             var skin = Mat(new Color(.96f, .72f, .58f), 0, .35f);
-            glowMat = Mat(col, 0, .9f); glowMat.EnableKeyword("_EMISSION");
 
             Part(PrimitiveType.Cylinder, "Body", metal, new Vector3(0, .02f, .10f), new Vector3(90, 0, 0), new Vector3(.10f, .17f, .10f));
             Part(PrimitiveType.Cylinder, "Band", accent, new Vector3(0, .02f, .02f), new Vector3(90, 0, 0), new Vector3(.108f, .02f, .108f));
@@ -83,9 +98,47 @@ namespace RTE
                 float t = i / 6f;
                 Part(PrimitiveType.Sphere, "Hose", dark, new Vector3(0, .0f - t * .22f, -.04f - t * .2f), Vector3.zero, Vector3.one * .055f);
             }
-            nozzleTip = new GameObject("NozzleTip").transform; nozzleTip.SetParent(root, false);
             nozzleTip.localPosition = new Vector3(0, .02f, .37f);
             root.position = origin;
+        }
+
+        // โหลดโมเดลแขน+ปืนจาก Meshy: ย่อให้ยาว ModelLength, เลื่อนให้จุดจับอยู่ที่จุดหมุนของ root, หาตำแหน่งปากปืน
+        // ใช้ mesh ของผู้เล่นคนนั้นถ้ามี ไม่มีก็ใช้ mesh ของ P1 กับวัสดุสีของตัวเอง — คืนค่า false ถ้าไม่มีไฟล์เลย
+        bool BuildMeshyModel(int slot)
+        {
+            var prefab = Resources.Load<GameObject>($"Models/gun_p{slot}");
+            bool own = prefab != null;
+            if (!own) prefab = Resources.Load<GameObject>("Models/gun_p1");
+            var mat = Resources.Load<Material>($"Models/gun_p{slot}_mat");
+            if (prefab == null || mat == null) return false;
+            nativeSide = 1;                                      // โมเดลทั้งสองสีจาก Meshy ออกมาในทิศเดียวกัน (มือขวา)
+
+            model = Object.Instantiate(prefab).transform;
+            model.name = "MeshyArmGun";
+            foreach (var r in model.GetComponentsInChildren<Renderer>())
+            {
+                r.sharedMaterial = mat;
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            }
+            mirror = new GameObject("Mirror").transform; mirror.SetParent(root, false);
+            model.SetParent(mirror, false);
+            model.localRotation = Quaternion.Euler(ModelEuler);
+            var b = Bounds(model);
+            model.localScale *= ModelLength / Mathf.Max(.001f, b.size.z);
+            b = Bounds(model);
+            var grip = new Vector3(b.center.x, b.center.y + GripAt.y * b.size.y, b.center.z + GripAt.x * b.size.z);
+            model.localPosition -= grip;
+            nozzleTip.localPosition = new Vector3(b.center.x, b.center.y + NozzleAt.y * b.size.y, b.center.z + NozzleAt.x * b.size.z) - grip;
+            return true;
+        }
+
+        // กรอบรวมของทุกชิ้นใน root (root ยังอยู่ที่ 0,0,0 ไม่หมุน ตอนเรียก)
+        static Bounds Bounds(Transform t)
+        {
+            var rs = t.GetComponentsInChildren<Renderer>();
+            var b = rs[0].bounds;
+            for (int i = 1; i < rs.Length; i++) b.Encapsulate(rs[i].bounds);
+            return b;
         }
 
         // สร้างวัสดุ (สี, ความเป็นโลหะ, ความเงา) ด้วย shader ของ URP
@@ -137,6 +190,15 @@ namespace RTE
             var want = c.rotation * Quaternion.Euler(pitch, yaw, -side * 10);
             root.rotation = Quaternion.Slerp(root.rotation, want, 1 - Mathf.Exp(-dt * 14));
 
+            fillLight.intensity = 1.2f + 3.5f * suck;           // ดูดอยู่ = ไฟสีผู้เล่นสว่างขึ้น
+            if (model != null)
+            {
+                // ถือด้วยมืออีกข้าง = กลับด้านโมเดล (ทำตอนปืนลดลงต่ำสุด จะได้ไม่เห็นการพลิก)
+                float wantX = sideTarget * nativeSide >= 0 ? 1 : -1;
+                if (mirror.localScale.x != wantX && (raise < .05f || Mathf.Abs(side - sideTarget) > .5f))
+                    mirror.localScale = new Vector3(wantX, 1, 1);
+                return;
+            }
             fanAngle += dt * (180 + 1800 * suck);
             fan.localEulerAngles = new Vector3(0, 0, fanAngle);
             glowMat.SetColor("_EmissionColor", col * (0.6f + 4f * suck));

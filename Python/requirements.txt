@@ -1,12 +1,16 @@
-# Tracker (กล้อง + YOLO หาตัวผู้เล่น + MediaPipe จับโครงกระดูก) — Python 3.11
-numpy==1.26.4
-# mediapipe ใช้ opencv-contrib-python, pyorbbecsdk2 ใช้ opencv-python — ต้องเป็นเวอร์ชันเดียวกันจึงใช้ cv2 ร่วมกันได้
+# Tracker: YOLO (ตัว + ขา) + MediaPipe (มือ)
+# torch ติดตั้งแยกใน setup_venv.bat (รุ่น CUDA สำหรับการ์ด NVIDIA)
+numpy<2
+sympy==1.13.1
+# mediapipe ใช้ opencv-contrib-python, pyorbbecsdk2 ใช้ opencv-python — ต้องเวอร์ชันเดียวกันจึงใช้ cv2 ร่วมกันได้
 opencv-python==4.11.0.86
 opencv-contrib-python==4.11.0.86
-mediapipe==0.10.21
-onnxruntime-directml==1.24.4
+ultralytics
+onnx
+onnxruntime-gpu<1.27   # CUDA 12 build: uses the CUDA DLLs that come with torch (1.27+ needs CUDA 13)
+mediapipe
 pygrabber==0.2
 pyorbbecsdk2==2.1.3
 # Tools/ (สร้างสไปรต์/ฟอนต์) — ไม่จำเป็นถ้าแค่เล่น
-pillow==12.3.0
+pillow
 fonttools==4.68.0

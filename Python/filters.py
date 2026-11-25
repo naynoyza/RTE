@@ -1,4 +1,4 @@
-# ไฟล์นี้: [Tracker] ฟิลเตอร์ One-Euro ลดอาการสั่นของตำแหน่งมือ
+# ไฟล์นี้: [Tracker] ฟิลเตอร์ One-Euro ลดอาการสั่นของจุดตัว/ขา/มือ (ใช้กับตัวเลขหรือ numpy array ก็ได้)
 import math
 
 
@@ -25,7 +25,7 @@ class OneEuro:
         dt = max(1e-3, t - self.t)
         self.t = t
         dx = (x - self.x) / dt
-        self.dx += self._a(self.d_cutoff, dt) * (dx - self.dx)
+        self.dx = self.dx + self._a(self.d_cutoff, dt) * (dx - self.dx)
         cutoff = self.min_cutoff + self.beta * abs(self.dx)
-        self.x += self._a(cutoff, dt) * (x - self.x)
+        self.x = self.x + self._a(cutoff, dt) * (x - self.x)  # works for floats and numpy arrays
         return self.x

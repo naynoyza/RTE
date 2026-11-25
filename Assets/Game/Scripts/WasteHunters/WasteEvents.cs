@@ -17,20 +17,21 @@ namespace RTE
         const float DustAt = 65f;
 
         readonly Image banner, glow;
-        readonly Text bannerText;
+        static readonly Vector2 BannerSize = new Vector2(780, 260);
+        readonly Text rushText;   // ตัวอักษร FINAL RUSH (ใช้เมื่อยังไม่มีรูป ui2/rush_banner)
         float bannerTime, feverLeft, secondWaveAt = -1;
         int feverIndex; bool dustDone;
 
         public WasteEvents(Transform canvas)
         {
-            // ป้ายโลหะแถบเหลือง-ดำ จาก UI/11.jpg (ข้อความในรูปถูกปิดด้วยแผ่นเข้ม แล้วเขียนใหม่ได้ทุกอีเวนต์)
-            banner = UIKit.Img("EventBanner", canvas, UIKit.Load("fx/fever_sign"), new Vector2(700, 210));
+            // ป้ายอีเวนต์เป็นรูปทั้งแผ่น (ui2/fever_banner, ui2/dust_banner) — ข้อความอยู่ในรูปแล้ว
+            banner = UIKit.Img("EventBanner", canvas, UIKit.Load("ui2/fever_banner"), BannerSize);
             banner.rectTransform.anchoredPosition = new Vector2(0, 230);
-            var plate = UIKit.Panel("Plate", banner.transform, new Vector2(560, 120), new Color(.16f, .17f, .19f, 1));
-            plate.rectTransform.anchoredPosition = new Vector2(0, 2);
-            glow = UIKit.Img("Glow", banner.transform, UIKit.Load("fx_glow"), new Vector2(900, 380), false);
+            glow = UIKit.Img("Glow", banner.transform, UIKit.Load("fx_glow"), new Vector2(1000, 420), false);
             glow.transform.SetAsFirstSibling();
-            bannerText = UIKit.Label("Text", banner.transform, "", 58, new Color(1f, .85f, .3f));
+            rushText = UIKit.Label("RushText", banner.transform, "", 72, new Color(1f, .78f, .25f));
+            rushText.rectTransform.sizeDelta = new Vector2(1100, 260);
+            UIKit.Outline(rushText, new Color(.35f, .05f, 0), 4);
             banner.gameObject.SetActive(false);
         }
 
@@ -49,6 +50,7 @@ namespace RTE
                 if (secondWaveAt > 0 && feverLeft <= secondWaveAt) { secondWaveAt = -1; foreach (var l in lanes) l.DumpBurst(5); }
             }
             if (bannerTime > 0 && (bannerTime -= dt) <= 0) banner.gameObject.SetActive(false);
+            foreach (var l in lanes) l.BannerUp = bannerTime > 0;   // ป้ายรายฝั่งหลบลงใต้ป้ายนี้
             banner.rectTransform.localScale = Vector3.one * (1 + .03f * Mathf.Sin(Time.time * 9));
             glow.color = new Color(1f, .75f, .2f, .35f + .25f * Mathf.Sin(Time.time * 6));
         }
@@ -57,18 +59,28 @@ namespace RTE
         {
             feverLeft = FeverSeconds; secondWaveAt = FeverSeconds * .5f;
             foreach (var l in lanes) { l.StartFever(FeverSeconds); l.DumpBurst(6); }
-            Show("DAILY DUMP FEVER!\n2X SCORE", new Color(1f, .85f, .3f), 3f);
+            Show("ui2/fever_banner", 3f);
+        }
+
+        // FINAL RUSH: ใช้รูป ui2/rush_banner ถ้ามี ไม่มีก็แสดงเป็นตัวอักษรใหญ่มีขอบ (ไม่ใช้รูปป้ายอื่นที่มีคำอยู่แล้ว)
+        public void StartRush(GameSettings settings)
+        {
+            bool hasArt = Resources.Load<Texture2D>("Sprites/ui2/rush_banner") != null;
+            Show(hasArt ? "ui2/rush_banner" : "ui2/fever_banner", 3f);
+            banner.color = hasArt ? Color.white : Color.clear;
+            rushText.text = hasArt ? "" : $"FINAL RUSH!\n{settings.RushSeconds:0} วินาทีสุดท้าย • คะแนน x{settings.RushScoreMultiplier}";
         }
 
         public void StartDust(PlayerLane[] lanes)
         {
             foreach (var l in lanes) l.StartDust();
-            Show("พายุฝุ่น!\nปัดมือเช็ดหน้ากาก", new Color(1f, .75f, .45f), 2.2f);
+            Show("ui2/dust_banner", 2.2f);
         }
 
-        void Show(string text, Color c, float seconds)
+        void Show(string sprite, float seconds)
         {
-            bannerText.text = text; bannerText.color = c;
+            banner.sprite = UIKit.Load(sprite);
+            banner.color = Color.white; rushText.text = "";
             bannerTime = seconds; banner.gameObject.SetActive(true);
         }
     }

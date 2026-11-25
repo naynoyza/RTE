@@ -123,6 +123,9 @@ namespace RTE
                                      water ? new Color(.8f, .96f, 1f) : new Color(1f, .92f, .55f), 500);
         }
 
+        /// <summary>ซ่อน/แสดงแขนและพลังทั้งหมด (ฉากจบและหน้าสรุปผลซ่อน เพื่อให้เห็นต้นไม้เต็ม ๆ)</summary>
+        public void SetVisible(bool on) => root.gameObject.SetActive(on);
+
         public void Reset()
         {
             sending = false; head = tail = 0; orbSize = 0; wCharge = 0; wPush = 0; offset = Vector3.zero;

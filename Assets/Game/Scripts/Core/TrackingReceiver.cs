@@ -29,7 +29,22 @@ namespace RTE
         public bool hand;                // มีมือยกขึ้นเล็งอยู่ไหม
         public int use = -1;             // มือที่เล็ง: 0 = ซ้าย, 1 = ขวา, -1 = ไม่ได้ยก
         public float x = .5f, y = .5f;   // ตำแหน่งมือที่เล็งบนจอของตัวเอง (0..1, y = 1 คือบนสุด)
-        public float[] kp;               // จุดกระดูก 17 จุด [x, y, ความมั่นใจ] x 17 (0..1 ของภาพกล้อง, y ลงล่าง)
+        public float[] kp;               // จุดกระดูก 17 จุด จาก YOLO (ตัว + ขา) [x, y, ความมั่นใจ] x 17 (0..1 ของภาพกล้อง, y ลงล่าง)
+        public TrackedHand handL = new TrackedHand();   // มือฝั่งซ้ายจอ (= มือซ้ายของผู้เล่น เพราะภาพกลับซ้าย-ขวา) จาก MediaPipe
+        public TrackedHand handR = new TrackedHand();   // มือฝั่งขวาจอ
+    }
+
+    // มือ 1 ข้างแบบละเอียดจาก MediaPipe (21 จุด)
+    // จุด: 0 ข้อมือ | นิ้วโป้ง 1-4 | ชี้ 5-8 | กลาง 9-12 | นาง 13-16 | ก้อย 17-20 (4, 8, 12, 16, 20 = ปลายนิ้ว)
+    [Serializable]
+    public class TrackedHand
+    {
+        public bool ok;                  // เห็นมือข้างนี้ไหม
+        public string g = "none";        // ท่ามือ: open / fist / point / peace / pinch / other / none
+        public int[] f;                  // นิ้วที่เหยียด [โป้ง, ชี้, กลาง, นาง, ก้อย] 1 = เหยียด
+        public float pinch = 1;          // ระยะปลายนิ้วโป้ง-ชี้ เทียบขนาดฝ่ามือ (< 0.35 = หยิบ)
+        public float px = .5f, py = .5f; // กลางฝ่ามือ (0..1 ของภาพกล้อง, y ลงล่าง)
+        public float[] lm;               // 21 จุด [x, y, z] x 21 (x, y = 0..1 ของภาพกล้อง, z = ลึกเทียบข้อมือ)
     }
 
     // ข้อความ JSON ทั้งก้อนที่ tracker ส่งมา
@@ -106,8 +121,29 @@ namespace RTE
                 }
                 catch (Exception e) { Debug.LogWarning("[Tracking] bad packet: " + e.Message); }
             }
-            Connected = Time.unscaledTime - lastPacketTime < timeout;
+            // บอต: F3 = บอตทั้ง 2 คน, Shift+F3 = บอตเฉพาะ P1 (เล่นกับคนจริง)
+            var kb = Keyboard.current;
+            if (kb != null && kb.f3Key.wasPressedThisFrame)
+            {
+                bool solo = kb.shiftKey.isPressed;
+                BotPlayer.On = !(BotPlayer.On && BotPlayer.Both == !solo);
+                BotPlayer.Both = !solo;
+            }
+
+            // บอตเล่นครบ 2 คน = ไม่ต้องมีกล้อง ถือว่าต่ออยู่
+            Connected = Time.unscaledTime - lastPacketTime < timeout || (BotPlayer.On && BotPlayer.Both);
             if (!Connected) UseMouseAndKeys();
+            for (int i = 0; i < 2; i++)
+                if (BotPlayer.Controls(i)) BotPlayer.Fill(Players[i], i, Time.unscaledDeltaTime);
+        }
+
+        void OnGUI()
+        {
+            if (!BotPlayer.On || !BotPlayer.ShowLabel) return;
+            var st = new GUIStyle(GUI.skin.label) { fontSize = 20, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
+            st.normal.textColor = new Color(1f, .65f, .2f);
+            string who = BotPlayer.Both ? $"BOT P1 {BotPlayer.ProfileName(0)} + P2 {BotPlayer.ProfileName(1)} (F3)" : $"BOT P1 {BotPlayer.ProfileName(0)} (Shift+F3)";
+            GUI.Label(new Rect(Screen.width * .5f - 250, Screen.height - 36, 500, 30), Connected ? who : who + " — รอ tracker", st);
         }
 
         // โหมดทดสอบไม่มีกล้อง: P1 เล็งด้วยเมาส์ (จอซ้าย), P2 เล็งด้วย WASD
