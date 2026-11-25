@@ -58,6 +58,7 @@ namespace RTE
         public void StartFever(PlayerLane[] lanes)
         {
             feverLeft = FeverSeconds; secondWaveAt = FeverSeconds * .5f;
+            Sfx.Play("fever");
             foreach (var l in lanes) { l.StartFever(FeverSeconds); l.DumpBurst(6); }
             Show("ui2/fever_banner", 3f);
         }
@@ -65,6 +66,7 @@ namespace RTE
         // FINAL RUSH: ใช้รูป ui2/rush_banner ถ้ามี ไม่มีก็แสดงเป็นตัวอักษรใหญ่มีขอบ (ไม่ใช้รูปป้ายอื่นที่มีคำอยู่แล้ว)
         public void StartRush(GameSettings settings)
         {
+            Sfx.Play("rush");
             bool hasArt = Resources.Load<Texture2D>("Sprites/ui2/rush_banner") != null;
             Show(hasArt ? "ui2/rush_banner" : "ui2/fever_banner", 3f);
             banner.color = hasArt ? Color.white : Color.clear;
@@ -74,6 +76,7 @@ namespace RTE
         public void StartDust(PlayerLane[] lanes)
         {
             foreach (var l in lanes) l.StartDust();
+            Sfx.Play("dust");
             Show("ui2/dust_banner", 2.2f);
         }
 

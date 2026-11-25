@@ -236,6 +236,7 @@ namespace RTE
                     if (readyHold[i] >= LaunchSequence.ReadyHold)
                     {
                         ready[i] = true; ringFx[i].Burst(); progress[i].fillAmount = 0; progressTrack[i].color = Color.clear;
+                        Sfx.Play("ready");
                         pLabel[i].text = $"P{i + 1}  พร้อม! ✓";
                     }
                 }
@@ -246,12 +247,17 @@ namespace RTE
                 if ((ready[0] && ready[1]) || countT >= LaunchSequence.AutoSeconds || skip)
                 {
                     phase = 2; zoomT = 0;
+                    Sfx.Play("teleport");
                     for (int i = 0; i < 2; i++) { ringFx[i].Burst(); progress[i].fillAmount = 0; progressTrack[i].color = Color.clear; }
                 }
             }
             else                                            // ออกภารกิจ: teleport -> warp + การ์ดภารกิจ -> แฟลช
             {
+                float zPrev = zoomT;
                 zoomT += dt;
+                if (zPrev < LaunchSequence.TeleportSeconds && zoomT >= LaunchSequence.TeleportSeconds) Sfx.Play("warp");
+                float flashAt = LaunchSequence.TeleportSeconds + LaunchSequence.WarpSeconds - .3f;
+                if (zPrev < flashAt && zoomT >= flashAt) Sfx.Play("flash");
                 // TELEPORT: เสาแสงแรงขึ้น ตัวละครยืดเป็นลำแสงแล้วลอยหายขึ้นไป
                 float tp = Mathf.Clamp01(zoomT / LaunchSequence.TeleportSeconds);
                 for (int i = 0; i < 2; i++)
@@ -296,7 +302,9 @@ namespace RTE
             bool taken = want != Hero.None && GameSession.Heroes[1 - i] == want;
             if (want == Hero.None || taken || side != holdSide[i]) hold[i] = 0;
             holdSide[i] = side;
+            int secBefore = Mathf.CeilToInt(HoldSeconds - hold[i]);
             if (want != Hero.None && !taken) hold[i] += Time.deltaTime;
+            if (hold[i] > 0 && Mathf.CeilToInt(HoldSeconds - hold[i]) != secBefore) Sfx.Play("tick", .6f, 1 + .1f * (3 - secBefore));
 
             progress[i].fillAmount = hold[i] / HoldSeconds;
             bool holding = hold[i] > 0;
@@ -325,6 +333,7 @@ namespace RTE
             stages[i].Set(h);
             ringFx[i].Burst();
             cardPickT[(int)h] = 0;
+            Sfx.Play("lock");
             hold[i] = 0;
         }
 

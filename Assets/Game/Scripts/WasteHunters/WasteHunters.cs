@@ -106,6 +106,7 @@ namespace RTE
         void GoCover()
         {
             StopAllCoroutines();
+            Bgm.Play("bgm_menu");
             state = State.Cover;
             GameSession.Active = false; GameSession.Clear(); guard.Hide();
             select.Hide(); practice.Hide(); hudRoot.SetActive(false); overlay.Hide();
@@ -125,6 +126,7 @@ namespace RTE
         void GoPractice()
         {
             state = State.Practice;
+            Bgm.Play("bgm_game1", .8f);
             cover.Hide(); select.Hide(); hudRoot.SetActive(true);
             foreach (var lane in lanes) { lane.Reset(); lane.Practice = true; }
             timer.Set(Settings.RoundSeconds);
@@ -138,6 +140,7 @@ namespace RTE
             foreach (var lane in lanes) { lane.Practice = false; lane.Reset(); }
             events.Reset();
             timeLeft = Settings.RoundSeconds; timer.Set(timeLeft);
+            Sfx.Play("countdown");
             yield return overlay.Countdown();
             state = State.Play;
         }
@@ -147,6 +150,7 @@ namespace RTE
             state = State.Result;
             hudRoot.SetActive(false);                     // ซ่อนคะแนน/เวลา ไม่ให้ทับหน้าสรุปผล
             overlay.ShowResult(lanes[0], lanes[1]);
+            Sfx.Play("result");
             yield return new WaitForSeconds(10f);
             if (GameSession.Active) UnityEngine.SceneManagement.SceneManager.LoadScene(GameSession.Game2Scene);   // ไปเกม 2
             else GoCover();

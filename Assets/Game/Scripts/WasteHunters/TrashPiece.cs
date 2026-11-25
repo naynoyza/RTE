@@ -16,7 +16,7 @@ namespace RTE
     public class TrashPiece
     {
         // ค่ามุมมองของจอผู้เล่น (พิกเซลจากกึ่งกลางจอครึ่ง)
-        public const float HorizonY = -40f;  // ความสูงของปลายถนน (จุดลับตาของฉากหลังหลายชั้น)
+        public const float HorizonY = 60f;   // ความสูงของปลายถนน
         const float GroundScale = 820f;      // y บนจอ = HorizonY - GroundScale / z
         const float SideScale = 620f;        // x บนจอ = lat * SideScale / z
         public const float SpawnZ = 18f;     // เกิดที่ระยะ 18 เมตร

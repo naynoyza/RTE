@@ -23,6 +23,7 @@ namespace RTE
         readonly Image cardIcon;
         Image stepIcon;
         float time, bothReadyTime;
+        readonly bool[] wasStep = new bool[2], wasReady = new bool[2];   // ขอบขาขึ้น -> เล่นเสียง
 
         static readonly Color Metal = new Color(.08f, .09f, .1f, 1f), Green = new Color(.3f, 1f, .35f);
 
@@ -85,7 +86,11 @@ namespace RTE
             root.SetActive(false);
         }
 
-        public void Show() { root.SetActive(true); time = bothReadyTime = 0; }
+        public void Show()
+        {
+            root.SetActive(true); time = bothReadyTime = 0;
+            for (int i = 0; i < 2; i++) wasStep[i] = wasReady[i] = false;
+        }
         public void Hide() => root.SetActive(false);
 
         // คืน true = ปิดหน้าต่างสอนแล้วเข้า 3-2-1-GO!
@@ -102,6 +107,10 @@ namespace RTE
                 var l = lanes[i];
                 bool ready = l.DidVacuum && l.DidStep;
                 all &= ready;
+                float pitch = i == 0 ? 1f : 1.12f;
+                if (l.DidStep && !wasStep[i]) Sfx.Play("step", .6f, pitch);             // ติ๊กเช็กลิสต์ย่ำเท้า
+                if (ready && !wasReady[i]) Sfx.Play("ready", .8f, pitch);               // ครบทั้งสองข้อ = READY!
+                wasStep[i] = l.DidStep; wasReady[i] = ready;
                 boxText[i].text = "PRACTICE\n" + Check(l.DidVacuum) + " ดูดขยะ 1 ชิ้น\n" + Check(l.DidStep) + " ย่ำเท้าวิ่ง";
                 boxText[i].color = ready ? Green : Color.white;
                 box[i].color = ready ? new Color(.05f, .3f, .1f, .92f) : new Color(.05f, .1f, .2f, .88f);

@@ -42,9 +42,11 @@ namespace RTE
             bothLost = lost[0] > 0 && lost[1] > 0 ? bothLost + dt : 0;
 
             bool w0 = lost[0] > WarnAfter, w1 = lost[1] > WarnAfter;
+            bool wasWarning = root.activeSelf;
             root.SetActive(w0 || w1);
             if (w0 || w1)
             {
+                if (!wasWarning) Sfx.Play("alert", .9f);                // แถบเตือนเพิ่งโผล่
                 float left = Mathf.Min(OneLostSeconds - Mathf.Max(lost[0], lost[1]), bothLost > 0 ? BothLostSeconds - bothLost : 99);
                 string who = w0 && w1 ? "P1 และ P2" : w0 ? "P1" : "P2";
                 text.text = $"{who} ออกจากระยะกล้อง!  กลับมายืนที่เดิม  (กลับหน้าแรกใน {Mathf.Max(0, Mathf.CeilToInt(left))} วิ)";

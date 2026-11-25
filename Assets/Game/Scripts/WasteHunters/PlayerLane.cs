@@ -203,6 +203,10 @@ namespace RTE
             // 5) เป้าเล็ง ลำแสง และปืน
             DrawAim(showWorld, playing, present, target2);
             bool sucking = showWorld && hand >= 0 && stunTime <= 0 && (target2 != null || pieces.Exists(t => t.SuckProgress >= 0));
+            // เสียงวน: ดูดขยะ / เดิน-ย่ำเท้า (ดังตามความเร็ว) / ลมพายุฝุ่น
+            Sfx.Loop($"vac{slot}", "loop_vacuum", sucking, .45f);
+            Sfx.Loop($"walk{slot}", "loop_walk", showWorld && present && walk.Boost > .15f, .2f + .35f * Mathf.Clamp01(walk.Boost));
+            Sfx.Loop($"wind{slot}", "loop_wind", showWorld && dust > 0, .35f);
             gun.Update(aim, showWorld ? hand : -1, sucking, walk.Bob, dt);
             DrawBeam(sucking, target2 != null ? target2.ScreenPos : aim);
         }
@@ -253,6 +257,7 @@ namespace RTE
         public void SpawnDanger()
         {
             pieces.Add(new TrashPiece(trashLayer, Random.Range(-RoadHalf, RoadHalf) * .7f, settings.TrashScale, 0, true) { Pace = .8f });
+            Sfx.Play("danger", .6f);
         }
 
         // ทดสอบ: จำลองว่าดูดขยะช็อตไฟเข้าไป
@@ -261,6 +266,7 @@ namespace RTE
         public void StartOverdrive()
         {
             overdriveTime = OverdriveSeconds;
+            Sfx.Play("overdrive");
             ShowEventImage("ui2/overdrive", new Vector2(StatusH * 3.04f, StatusH), 2.2f);   // ตำแหน่ง/ความสูงเดียวกับ STUNNED
         }
 
@@ -436,11 +442,13 @@ namespace RTE
             if (t.Danger)                                                  // ดูดขยะช็อตไฟ = โดนช็อต
             {
                 stunTime = StunSeconds; Combo = 0; overdriveTime = 0;
+                Sfx.Play("stun");
                 Score = Mathf.Max(0, Score - TrashCatalog.DangerPenalty);
                 ShowEventImage("ui2/stunned", new Vector2(StatusH * 2.88f, StatusH), StunSeconds);
                 ShowToast($"-{TrashCatalog.DangerPenalty}  โดนไฟช็อต!", new Color(1f, .4f, .4f));
                 RefreshHud(); return;
             }
+            Sfx.Play(t.IsRare ? "rare" : "collect", .7f, Random.Range(.95f, 1.08f));
             if (Practice) { DidVacuum = true; ShowToast("เยี่ยม! ดูดได้แล้ว", new Color(.4f, 1f, .5f)); return; }
             Combo++;
             int bonus = TrashCatalog.ComboBonus(Combo);

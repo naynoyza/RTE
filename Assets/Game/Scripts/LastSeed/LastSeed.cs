@@ -140,6 +140,7 @@ namespace RTE
         void GoPractice()
         {
             StopAllCoroutines();
+            Bgm.Play("bgm_game2", .8f);
             state = State.Practice;
             ResetRound();
             hud.Root.SetActive(true); overlay.Hide();
@@ -157,6 +158,7 @@ namespace RTE
             ResetRound();
             for (int i = 0; i < 2; i++)
                 hud.SetHint(i, "เตรียมตัว...", i == 0 ? "Water Guardian" : "Sun Guardian", i == 0 ? SeedSettings.Water : SeedSettings.Sun);
+            Sfx.Play("countdown");
             yield return overlay.Countdown("ชูแขนเป็นตัว V = รับพลัง   •   ผลักฝ่ามือ = ส่งพลังให้ต้นไม้   •   ส่งพร้อมกัน ต้นไม้โตเร็ว!");
             state = State.Play;
         }
@@ -165,6 +167,8 @@ namespace RTE
         {
             state = State.Finale;
             tree.Burst(140); tree.Celebrate(true);
+            Sfx.Play("finale");
+            Bgm.Play("bgm_finale");
             hud.Root.SetActive(false);                                      // ฉากจบ: เหลือแต่ต้นไม้กับฉากหลัง
             for (int i = 0; i < 2; i++) guardians[i].SetVisible(false);
             for (float t = 0; t < FinaleSeconds; t += Time.deltaTime)
@@ -184,6 +188,7 @@ namespace RTE
             float syncPct = syncSeconds + soloSeconds > 0 ? syncSeconds / (syncSeconds + soloSeconds) : 0;
             hud.Root.SetActive(false);
             for (int i = 0; i < 2; i++) guardians[i].SetVisible(false);
+            if (!grown) Sfx.Play("result");                                 // โตเต็ม = มีเสียง finale ไปแล้ว
             // การ์ดซ้าย = น้ำ (P1), ขวา = แสงแดด (P2), วงกลาง = ความสมดุล; ย่อและเลื่อนลงให้เห็นต้นไม้ด้านบน
             overlay.ShowCards(grown ? "ui2/tree_banner" : null, grown ? "" : $"หมดเวลา  ต้นไม้โต {Mathf.FloorToInt(growth * 100)}%",
                 new CenterOverlay.Card { Title = "น้ำ", Body = $"ส่ง {sends[0]} ครั้ง" },
@@ -206,7 +211,7 @@ namespace RTE
             if (!assist && stallTime >= Settings.StallAssistSeconds)
             {
                 assist = true;
-                hud.Popup("ช่วยเร่งพลังให้แล้ว!");
+                hud.Popup("ช่วยเร่งพลังให้แล้ว!"); Sfx.Play("rush", .8f);
             }
         }
 
@@ -234,6 +239,7 @@ namespace RTE
             BotPose();
 
             bool playing = state == State.Play;
+            Sfx.Loop("water", "loop_water", state == State.Practice || state == State.Countdown || playing, .25f);   // บรรยากาศน้ำไหลเบา ๆ
             bool[] sending = new bool[2];
             for (int i = 0; i < 2; i++)
             {
@@ -245,10 +251,12 @@ namespace RTE
                     // ช่วงซ้อมชาร์จเร็วกว่าเกมจริง (~1.5 วิ เต็ม) และส่งได้เฉพาะสเต็ป 2
                     float rate = practicing ? 1f / SeedPractice.ChargeSeconds
                                : Settings.ChargePerSecond * (assist ? Settings.AssistChargeMultiplier : 1f);
+                    float g0 = gauge[i];
                     if (pose == SeedPose.Charge) gauge[i] = Mathf.Min(1, gauge[i] + rate * dt);
+                    if (g0 < 1 && gauge[i] >= 1) Sfx.Play("charged", .7f);
                     sending[i] = pose == SeedPose.Push && gauge[i] > 0 && (playing || practiceStep == 2);
                 }
-                if (sending[i] && !wasSending[i]) { sendStart[i] = Time.time; sends[i]++; }
+                if (sending[i] && !wasSending[i]) { sendStart[i] = Time.time; sends[i]++; Sfx.Play("send", .7f, i == 0 ? 1f : 1.12f); }
                 wasSending[i] = sending[i];
                 guardians[i].Tick(pose, gauge[i], sending[i], poses[i].Reach, lost, dt);
             }
@@ -285,7 +293,7 @@ namespace RTE
                         && Time.time - sendStart[1 - i] <= Settings.PerfectSyncWindow)
                     {
                         perfectSyncs++; growth += Settings.PerfectSyncBonus;
-                        hud.Popup("PERFECT SYNC!"); tree.Burst(50);
+                        hud.Popup("PERFECT SYNC!"); tree.Burst(50); Sfx.Play("sync");
                         break;                                   // เริ่มพร้อมกันเฟรมเดียวกัน = นับครั้งเดียว
                     }
 
@@ -293,7 +301,7 @@ namespace RTE
                 int stage = TreeView.StageOf(growth);
                 if (stage > stageShown)
                 {
-                    stageShown = stage; tree.Burst(90);
+                    stageShown = stage; tree.Burst(90); Sfx.Play("stage");
                     hud.Popup($"ระดับ {stage + 1} • {TreeView.StageName[stage]}!");
                 }
 
@@ -344,6 +352,7 @@ namespace RTE
             if (practiceStep == 1 && ready[0] && ready[1])
             {
                 practiceStep = 2;
+                Sfx.Play("ready", .8f);
                 practice.Flash("ผลักฝ่ามือพร้อมกัน!", new Color(1f, .85f, .35f));
             }
             if (practiceStep == 2)
@@ -354,7 +363,7 @@ namespace RTE
             {
                 practiceEndT = 0;
                 practice.Flash("PERFECT SYNC!  พร้อมลุย!", new Color(.45f, 1f, .5f));
-                tree.Burst(90);
+                tree.Burst(90); Sfx.Play("sync");
             }
             if (practiceEndT >= 0) practiceEndT += dt;
 

@@ -25,6 +25,7 @@ namespace RTE
         readonly Image[] statusBox = new Image[2];
         readonly Image[] check = new Image[2];
         float alpha, bothTime, shownAt;
+        readonly bool[] wasReady = new bool[2];   // ไว้เล่นเสียง "join" ตอนผู้เล่นเพิ่งเข้าวง
 
         static readonly Color Cyan = new Color(.2f, .95f, 1f);                       // สีหัวข้อหน้าปก (ไม่ใช่สีผู้เล่น)
         static Color PColor(int i) => GameSettings.PlayerColors[i];   // P1 ฟ้า, P2 ส้ม — ตรงกับกรอบ ui2/cover_frame
@@ -73,7 +74,7 @@ namespace RTE
             UIKit.Anchor(hint.rectTransform, new Vector2(.5f, 0), new Vector2(0, 18));
         }
 
-        public void Show() { root.SetActive(true); if (!video.isPlaying) video.Play(); bothTime = 0; shownAt = Time.time; alpha = 0; }
+        public void Show() { root.SetActive(true); if (!video.isPlaying) video.Play(); bothTime = 0; shownAt = Time.time; alpha = 0; wasReady[0] = wasReady[1] = false; }
         public void Hide() { root.SetActive(false); video.Pause(); }
 
         // คืน true เมื่อครบ 2 คนค้างพอ (หรือกด Space)
@@ -92,7 +93,14 @@ namespace RTE
             Side(0, players[0], p1, online);
             Side(1, players[1], p2, online);
 
+            if (p1 && !wasReady[0]) Sfx.Play("join", .8f);
+            if (p2 && !wasReady[1]) Sfx.Play("join", .8f, 1.12f);
+            wasReady[0] = p1; wasReady[1] = p2;
+
+            float bothBefore = bothTime;
             bothTime = p1 && p2 ? bothTime + Time.deltaTime : 0;
+            if (bothTime > 0 && Mathf.CeilToInt(HoldSeconds - bothTime) != Mathf.CeilToInt(HoldSeconds - bothBefore))
+                Sfx.Play("tick", .6f);
             if (p1 && p2)
             {
                 title.text = $"พร้อมแล้ว! ไปหน้าเลือกตัวละครใน {Mathf.CeilToInt(HoldSeconds - bothTime)}";

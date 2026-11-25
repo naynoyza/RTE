@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="th"><head><meta charset="utf-8"><title>รายงานวิเคราะห์สถานะโปรเจกต์ Reboot The Earth</title>
+<style>
+@page { size: A4; margin: 14mm 13mm; }
+:root { --brand:#b8582a; --brand2:#d97a3a; --ink:#2b2520; --mute:#6b625b; --line:#f0dccd; --soft:#fdf5ef; --green:#5a8f3c; --red:#b8322a; }
+* { box-sizing:border-box; }
+body { font-family:"Leelawadee UI","Tahoma",sans-serif; color:var(--ink); font-size:10.5pt; line-height:1.55; margin:0; }
+h1,h2,h3 { margin:0; }
+.sec { page-break-before:always; }
+h3 { break-after:avoid; page-break-after:avoid; }
+.head { border-bottom:3px solid var(--brand); padding:4mm 0 5mm; margin-bottom:6mm; }
+.head .kick { letter-spacing:.28em; font-size:8.5pt; color:var(--brand); font-weight:600; }
+.head h1 { font-size:24pt; line-height:1.25; margin:4px 0 6px; color:var(--ink); }
+.head p { color:var(--mute); margin:0; }
+.meta { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin:0 0 6mm; }
+.meta div { border:1px solid var(--line); background:var(--soft); border-radius:7px; padding:7px 11px; font-size:9.6pt; }
+.meta b { display:block; color:var(--brand); font-size:10.5pt; }
+.g4 { display:grid; grid-template-columns:repeat(4,1fr); gap:7px; }
+.g4 img { width:100%; border-radius:6px; display:block; }
+.g4 .cap { text-align:center; color:var(--mute); font-size:8.6pt; margin-top:3px; }
+.band { background:linear-gradient(90deg,#8e3b17,var(--brand2)); color:#fff; border-radius:8px; padding:9px 16px 11px; margin-bottom:12px; }
+.band .k { font-size:8pt; letter-spacing:.25em; opacity:.85; }
+.band h2 { font-size:17pt; }
+h3 { font-size:12.5pt; border-left:5px solid var(--brand); padding-left:9px; margin:14px 0 7px; }
+p { margin:0 0 7px; }
+b.o { color:var(--brand); }
+table { width:100%; border-collapse:collapse; margin:4px 0 10px; font-size:9.6pt; page-break-inside:auto; }
+tr { page-break-inside:avoid; }
+th { background:var(--soft); color:var(--brand); text-align:left; padding:6px 8px; border:1px solid var(--line); }
+td { padding:6px 8px; border:1px solid var(--line); vertical-align:top; }
+td:first-child { color:var(--brand); font-weight:600; }
+.fig { margin:6px 0 10px; page-break-inside:avoid; }
+.fig img { width:100%; border-radius:7px; display:block; }
+.fig .cap { text-align:center; color:var(--mute); font-size:8.8pt; margin-top:4px; }
+.note { background:#eef5e8; border-left:4px solid var(--green); padding:8px 12px; border-radius:6px; margin:8px 0; font-size:9.8pt; }
+.new { background:#fff3e8; border-left:4px solid var(--brand2); padding:8px 12px; border-radius:6px; margin:8px 0; font-size:9.8pt; }
+.flow { display:flex; flex-wrap:wrap; gap:5px; margin:6px 0 10px; }
+.flow span { background:var(--soft); border:1px solid var(--line); border-radius:14px; padding:3px 11px; color:var(--brand); font-size:9pt; font-weight:600; }
+ol.n { padding-left:20px; margin:4px 0 8px; } ol.n li { margin-bottom:4px; }
+ul { margin:4px 0 8px; padding-left:20px; } li { margin-bottom:2px; }
+.chip { display:inline-block; padding:1px 9px; border-radius:10px; font-size:8.6pt; font-weight:600; white-space:nowrap; }
+.hi { background:#fde3e0; color:var(--red); } .md { background:#fff0e0; color:#d9731d; } .lo { background:#e8f2e0; color:var(--green); }
+.ok { background:#e8f2e0; color:var(--green); } .no { background:#fde3e0; color:var(--red); } .na { background:#eeeae6; color:var(--mute); }
+code { font-family:Consolas,monospace; font-size:8.8pt; background:#f6efe9; padding:0 4px; border-radius:3px; }
+pre { font-family:Consolas,monospace; font-size:8.6pt; background:var(--soft); border:1px solid var(--line); border-radius:6px; padding:8px 12px; margin:4px 0 10px; }
+</style></head><body>
+
+<div class="head">
+  <div class="kick">รายงานวิเคราะห์สถานะโปรเจกต์ • PROJECT STAGE ANALYSIS</div>
+  <h1>Reboot The Earth<br>เกมยังขาดอะไร ก่อนนำไปจัดแสดง</h1>
+  <p>วิเคราะห์ด้วยเครื่องมือ <b class="o">/project-stage-detect</b> ของ Game Studio ร่วมกับการอ่านโค้ด ฉาก และไฟล์ประกอบของเกมจริง
+  วันที่ 26 พฤศจิกายน 2026</p>
+</div>
+<div class="meta">
+  <div><b>สถานะโปรเจกต์ • PRODUCTION</b>ความมั่นใจ PASS — ตัวเกมเล่นได้ครบลำดับแล้ว</div>
+  <div><b>ระดับเอกสาร • MINIMAL</b>ไม่ได้ตั้ง <code>modes.rigor</code> จึงใช้ค่าเริ่มต้น เอกสารที่ต้องมีคือ game brief เท่านั้น</div>
+  <div><b>ช่องโหว่ที่พบ • 9 ข้อ</b>เอกสาร 1 ข้อ ตัวเกม 8 ข้อ (สำคัญมาก 3 ข้อ)</div>
+</div>
+
+<!-- ================= 1 OVERVIEW ================= -->
+<div class="band"><div class="k">01 • OVERVIEW</div><h2>ภาพรวมของโปรเจกต์ตอนนี้</h2></div>
+<h3>ลำดับการเล่นที่ทำเสร็จแล้ว</h3>
+<div class="flow"><span>หน้าปก รอ 2 คน</span><span>เลือกตัวละคร</span><span>สอนเล่นภารกิจ 1</span><span>WASTE HUNTERS 150 วิ</span><span>สรุปผลภารกิจ 1</span><span>สอนเล่นภารกิจ 2</span><span>THE LAST SEED</span><span>ฉากจบ + สรุปผล</span><span>กลับหน้าปก</span></div>
+<div class="g4">
+  <div><img src="img/01_cover.jpg"><div class="cap">หน้าปก</div></div>
+  <div><img src="img/02_select.jpg"><div class="cap">เลือกตัวละคร</div></div>
+  <div><img src="img/05_wh_play.jpg"><div class="cap">ภารกิจที่ 1</div></div>
+  <div><img src="img/13_ls_play.jpg"><div class="cap">ภารกิจที่ 2</div></div>
+</div>
+<h3>ความครบถ้วนแต่ละด้าน</h3>
+<table><tr><th style="width:17%">ด้าน</th><th style="width:16%">สถานะ</th><th>รายละเอียด</th></tr>
+<tr><td>ตัวเกม (โค้ด)</td><td><span class="chip ok">ครบลำดับ</span></td><td>สคริปต์ C# 44 ไฟล์ ประมาณ 6,000 บรรทัด ใน <code>Assets/Game/</code> (Core 8, Intro 10, WasteHunters 14, LastSeed 8, Editor 4) และระบบกล้อง Python (YOLO + MediaPipe ส่งข้อมูลทาง UDP)</td></tr>
+<tr><td>เอกสารออกแบบ</td><td><span class="chip no">ยังไม่มี</span></td><td>ไม่มีโฟลเดอร์ <code>design/</code> ระดับ minimal ต้องการแค่ <code>design/game-brief.md</code> ไฟล์เดียว ตอนนี้ข้อมูลลำดับเกมอยู่ใน README</td></tr>
+<tr><td>สถาปัตยกรรม (ADR)</td><td><span class="chip na">ไม่บังคับ</span></td><td>ยังไม่มี ADR ระดับ minimal ไม่ถือว่าเป็นช่องโหว่</td></tr>
+<tr><td>การผลิต</td><td><span class="chip md">ทำต่อเนื่อง</span></td><td>ไม่ใช้ sprint ที่ระดับนี้ มีหลักฐานการทดสอบ 19 ชุดใน <code>production/qa/evidence/</code> แต่มีงานที่ยังไม่ได้ commit จำนวนมาก</td></tr>
+<tr><td>การทดสอบ</td><td><span class="chip na">ไม่บังคับ</span></td><td>ฝั่ง Unity ยังไม่มีเทส ฝั่ง Python มี <code>test_player_lock.py</code> และตัวจำลองใน <code>Python/dev/</code></td></tr>
+</table>
+
+<!-- ================= 2 THIS SESSION ================= -->
+<div class="sec"></div>
+<div class="band"><div class="k">02 • UPDATES</div><h2>สิ่งที่เพิ่มในรอบนี้ (26 พ.ย. 2026)</h2></div>
+<table><tr><th style="width:24%">งาน</th><th>รายละเอียด</th></tr>
+<tr><td>เสียงประกอบเพิ่มเติม</td><td>เพิ่มเสียง 3 ไฟล์ (<code>join</code>, <code>alert</code>, <code>step</code>) และใส่เสียงในจุดที่ยังเงียบ: ผู้เล่นเข้าวงหน้าปก, นับถอยหลังไปหน้าเลือกตัวละคร, เช็กลิสต์สอนเล่น, แถบเตือนหลุดกล้อง, ติ๊ก 5 วินาทีสุดท้าย, สเต็ปสอนเล่นภารกิจ 2, ตัวช่วยเร่งพลัง และสรุปผลกรณีหมดเวลา</td></tr>
+<tr><td>แก้เสียงเกมไม่ออก</td><td>ทั้ง 2 ฉาก<b class="o">ไม่มี AudioListener</b> Unity จึงไม่เล่นเสียงใด ๆ เลย เพิ่ม <code>AudioListenerGuard.cs</code> สร้างตัวรับเสียงให้อัตโนมัติทุกครั้งที่โหลดฉาก</td></tr>
+<tr><td>เต็มจอจอที่สอง</td><td>เพิ่ม <code>FullscreenGameView.cs</code> (เฉพาะ Editor): กด Play แล้วถ้ามีจอที่สอง เกมจะขึ้นเต็มจออีกจอตามความละเอียดจริงของจอ โดยตัว Editor ยังแสดงหน้า Scene ไว้ เมื่อหยุด Play จะปิดเองและคืนค่าเดิม</td></tr>
+</table>
+<div class="fig"><img src="img/fullscreen.png"><div class="cap">ทดสอบจริง: จอซ้ายเป็น Unity Editor ที่ยังเห็น Scene และ Hierarchy ระหว่างเล่น จอขวาเป็นเกมเต็มจอ</div></div>
+
+<!-- ================= 3 GAPS ================= -->
+<div class="sec"></div>
+<div class="band"><div class="k">03 • GAPS</div><h2>สิ่งที่เกมยังขาด</h2></div>
+<h3>ตารางช่องโหว่ เรียงตามความสำคัญ</h3>
+<table><tr><th style="width:4%">#</th><th style="width:22%">ช่องโหว่</th><th style="width:11%">ความสำคัญ</th><th>รายละเอียด และแนวทางแก้</th></tr>
+<tr><td>1</td><td>ยังไม่เคย build เป็น .exe</td><td><span class="chip hi">สูง</span></td><td>ไม่มีโฟลเดอร์ <code>Builds/</code> ทั้งที่ตั้งคำสั่ง build ไว้แล้ว สคริปต์เต็มจอทำงานเฉพาะใน Editor, คำสั่ง run ตั้งเป็น 1280×720 แบบหน้าต่าง และต้องเปิด <code>run_tracker.bat</code> เอง
+<br><b class="o">แก้:</b> build แล้วทดสอบบนเครื่องที่ใช้จัดแสดงจริง พร้อมตั้งเต็มจอ/เลือกจอในตัว build</td></tr>
+<tr><td>2</td><td>งานยังไม่ได้ commit</td><td><span class="chip hi">สูง</span></td><td>งานเสียง, AudioListener, เต็มจอ และการแก้ไขจากรอบก่อน (CharacterSelect, PlayerLane, TrashPiece, WasteEvents, WasteHunters, LastSeed) ยังไม่อยู่ใน git
+<br><b class="o">แก้:</b> commit ทั้งหมด (ทำแล้วพร้อมรายงานฉบับนี้)</td></tr>
+<tr><td>3</td><td>ไม่มีอะไรเชื่อมภารกิจ 1 → 2</td><td><span class="chip hi">สูง</span></td><td>สรุปผลภารกิจ 1 แล้วตัดเข้าหน้าสอนภารกิจ 2 ทันที ไม่มีเนื้อเรื่องคั่น ทั้งที่มีของเตรียมไว้แต่ยังไม่ได้ใช้: วิดีโอ <code>StreamingAssets/intro.mp4</code> และเพลงคัตซีน <i>valley-sunset</i>, <i>forest-mist-whispers</i>
+<br><b class="o">แก้:</b> ทำฉากคั่นสั้น ๆ ด้วยวิดีโอและเพลงที่มีอยู่</td></tr>
+<tr><td>4</td><td>ไม่มีฉากจบรวมทั้ง 2 ภารกิจ</td><td><span class="chip md">กลาง</span></td><td>จบภารกิจ 2 แล้วกลับหน้าปกเลย ไม่มีหน้า "กู้โลกสำเร็จ" หรือผลรวมของทีมจากทั้งสองภารกิจ</td></tr>
+<tr><td>5</td><td>ไม่มีหน้าตั้งค่าสำหรับคนคุมบูธ</td><td><span class="chip md">กลาง</span></td><td>ปรับเสียง เวลารอบ หรือจอแสดงผลระหว่างงานไม่ได้ ต้องแก้ใน Inspector ของ Unity (<code>GameSettings</code>, <code>SeedSettings</code>) ในเกมมีแค่ Esc, R, F1, F2</td></tr>
+<tr><td>6</td><td>ไม่มีเอกสาร game brief</td><td><span class="chip md">กลาง</span></td><td>เอกสารเดียวที่ระดับ minimal ต้องมี ถ้ารายวิชาต้องส่งเอกสารออกแบบ ข้อนี้ควรขยับขึ้นเป็นความสำคัญสูง
+<br><b class="o">แก้:</b> <code>/reverse-document design Assets/</code> เขียนจากเกมที่สร้างเสร็จแล้ว</td></tr>
+<tr><td>7</td><td>Scene builder ไม่ใส่ AudioListener</td><td><span class="chip lo">ต่ำ</span></td><td>ตอนเล่นแก้แล้วด้วย <code>AudioListenerGuard</code> แต่ <code>WasteHuntersSceneBuilder</code> และ <code>LastSeedSceneBuilder</code> ยังสร้างกล้องโดยไม่มีตัวรับเสียง</td></tr>
+<tr><td>8</td><td>ของค้างที่ควรเก็บกวาด</td><td><span class="chip lo">ต่ำ</span></td><td>Build Settings ยังมีฉาก <code>Legacy/TrashBattle.unity</code> ที่ไม่มีไฟล์แล้ว (ปิดไว้) และ <code>TutorialScreen.cs</code>, <code>CoverScreen.cs</code> ไม่มีโค้ดไหนเรียกใช้</td></tr>
+<tr><td>9</td><td>ไม่มีเทสฝั่ง Unity</td><td><span class="chip lo">ต่ำ</span></td><td>สูตรคะแนน, RUSH, การเติบโตของต้นไม้, ความสมดุล และ PERFECT SYNC เขียนเทสได้ง่าย ระดับ minimal ไม่บังคับ</td></tr>
+</table>
+<div class="note">ระดับ minimal ไม่นับการไม่มี GDD, ADR, art bible, UX spec หรือ sprint plan เป็นช่องโหว่ เพราะโปรเจกต์ขนาดนี้ใช้ brief ฉบับเดียวกับโค้ดเป็นหลัก</div>
+
+<!-- ================= 4 NEXT ================= -->
+<div class="sec"></div>
+<div class="band"><div class="k">04 • NEXT STEPS</div><h2>ขั้นตอนถัดไปที่แนะนำ</h2></div>
+<ol class="n">
+<li><b class="o">Commit งานที่ค้างทั้งหมด</b> — ลดความเสี่ยงงานหายได้เร็วที่สุด</li>
+<li><b class="o">Build และทดสอบบนเครื่องจัดแสดง</b> — ใช้กล้องและจอที่สองจริง ตรวจเต็มจอ การเปิด tracker และเสียง</li>
+<li><b class="o">ทำฉากเชื่อมภารกิจ 1 → 2 และฉากจบรวม</b> — ใช้ <code>intro.mp4</code> และเพลงคัตซีนที่มีอยู่แล้ว</li>
+<li><b class="o">เขียน <code>design/game-brief.md</code></b> — ถ้ารายวิชาต้องใช้เอกสารออกแบบ</li>
+<li><b class="o">เก็บกวาด</b> — ใส่ AudioListener ใน scene builder, ลบฉากที่ไม่มีไฟล์ออกจาก Build Settings, ลบหรือเก็บสคริปต์ที่ไม่ใช้</li>
+</ol>
+<h3>เครื่องมือ Game Studio ที่ใช้ต่อได้</h3>
+<table><tr><th style="width:32%">คำสั่ง</th><th>ใช้เมื่อ</th></tr>
+<tr><td>/reverse-document design Assets/</td><td>เขียน <code>design/game-brief.md</code> จากเกมที่สร้างแล้ว</td></tr>
+<tr><td>/smoke-check</td><td>หลังมีตัว build แล้ว ก่อนนำไปจัดแสดง</td></tr>
+<tr><td>/test-setup</td><td>ถ้าตัดสินใจเพิ่มเทสฝั่ง Unity (ช่องโหว่ข้อ 9)</td></tr>
+</table>
+<h3>ภาคผนวก: จำนวนไฟล์</h3>
+<pre>Assets/Game/Scripts/Core/          8 ไฟล์
+Assets/Game/Scripts/Intro/        10 ไฟล์
+Assets/Game/Scripts/WasteHunters/ 14 ไฟล์
+Assets/Game/Scripts/LastSeed/      8 ไฟล์
+Assets/Game/Editor/                4 ไฟล์
+docs/architecture/                 0 ADR
+production/qa/evidence/           19 ชุด
+Assets/Tests/                      (ไม่มี)
+Python/dev/                        เทส 1 ไฟล์ + ตัวจำลอง/เครื่องมือ 3 ไฟล์
+design/                            (ไม่มี)</pre>
+<p style="color:var(--mute);font-size:9pt">ฉบับ Markdown ของรายงานนี้: <code>production/project-stage-report.md</code></p>
+
+</body></html>
