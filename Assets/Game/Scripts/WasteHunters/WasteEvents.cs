@@ -1,8 +1,8 @@
 // =====================================================================================================
 // WasteEvents — อีเวนต์ระหว่างเกม 1 ที่เกิดพร้อมกันทั้งสองฝั่ง (อ้างอิง Ref/event2.jpg, event3.jpg)
 // -----------------------------------------------------------------------------------------------------
-//   DAILY DUMP FEVER : นาที 0:35 และ 1:40 ของรอบ, 8 วิ — ป้ายใหญ่กลางจอ, ขยะร่วงจากฟ้า 2 ระลอก, คะแนน x2
-//   DUST STORM       : นาที 1:05 — ฝุ่นบังหน้ากากทั้งสองฝั่ง ต้องปัดมือเช็ด (หายเองใน 12 วิ)
+//   DAILY DUMP FEVER : วินาทีที่ GameSettings.FeverAt (ค่าเริ่มต้น 0:20 และ 1:00), นาน FeverSeconds — ป้ายใหญ่กลางจอ, ขยะร่วงจากฟ้า 2 ระลอก, คะแนน x2
+//   DUST STORM       : วินาทีที่ GameSettings.DustAt (ค่าเริ่มต้น 0:40) — ฝุ่นบังหน้ากากทั้งสองฝั่ง ต้องปัดมือเช็ด (หายเองใน 12 วิ)
 // อีเวนต์รายฝั่ง (OVERDRIVE จาก combo, DANGER ขยะช็อตไฟ) อยู่ใน PlayerLane
 // =====================================================================================================
 using UnityEngine;
@@ -12,10 +12,6 @@ namespace RTE
 {
     public class WasteEvents
     {
-        const float FeverSeconds = 8f;
-        static readonly float[] FeverAt = { 35f, 100f };
-        const float DustAt = 65f;
-
         readonly Image banner, glow;
         static readonly Vector2 BannerSize = new Vector2(780, 260);
         readonly Text rushText;   // ตัวอักษร FINAL RUSH (ใช้เมื่อยังไม่มีรูป ui2/rush_banner)
@@ -38,11 +34,11 @@ namespace RTE
         public void Reset() { bannerTime = feverLeft = 0; secondWaveAt = -1; feverIndex = 0; dustDone = false; banner.gameObject.SetActive(false); }
 
         // elapsed = วินาทีที่เล่นไปแล้วในรอบนี้
-        public void Tick(float elapsed, PlayerLane[] lanes)
+        public void Tick(float elapsed, PlayerLane[] lanes, GameSettings settings)
         {
             float dt = Time.deltaTime;
-            if (feverIndex < FeverAt.Length && elapsed >= FeverAt[feverIndex]) { feverIndex++; StartFever(lanes); }
-            if (!dustDone && elapsed >= DustAt) { dustDone = true; StartDust(lanes); }
+            if (feverIndex < settings.FeverAt.Length && elapsed >= settings.FeverAt[feverIndex]) { feverIndex++; StartFever(lanes, settings.FeverSeconds); }
+            if (!dustDone && elapsed >= settings.DustAt) { dustDone = true; StartDust(lanes); }
 
             if (feverLeft > 0)
             {
@@ -55,11 +51,11 @@ namespace RTE
             glow.color = new Color(1f, .75f, .2f, .35f + .25f * Mathf.Sin(Time.time * 6));
         }
 
-        public void StartFever(PlayerLane[] lanes)
+        public void StartFever(PlayerLane[] lanes, float seconds)
         {
-            feverLeft = FeverSeconds; secondWaveAt = FeverSeconds * .5f;
+            feverLeft = seconds; secondWaveAt = seconds * .5f;
             Sfx.Play("fever");
-            foreach (var l in lanes) { l.StartFever(FeverSeconds); l.DumpBurst(6); }
+            foreach (var l in lanes) { l.StartFever(seconds); l.DumpBurst(6); }
             Show("ui2/fever_banner", 3f);
         }
 

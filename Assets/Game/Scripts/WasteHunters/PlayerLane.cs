@@ -6,7 +6,6 @@
 //           • ขยะ : เกิดตามระยะทาง เลื่อนเข้าหาผู้เล่น เลยตัวไปแล้ว = หลุด (combo หาย)
 //           • เล็ง: เป้าเล็งตามมือที่ยก แตะขยะ = ดูดทันที -> ได้คะแนน + นับเป็นรีไซเคิล (GOAL); เล็งพลาดขยะก็เลยตัวไป
 //           • ระยะดูด: ขยะต้องเข้ามาใกล้กว่า SuckRange (สัดส่วนของระยะเกิด) จึงจะดูดได้
-//           • กัน AFK: เล็งค้างจุดเดิมนานเกิน AfkSeconds = ปืนหยุดดูดจนกว่าจะขยับมือ
 //           • ขยะที่เล็งยาก (ชิ้นเล็ก/ริมถนน/ขยะพิเศษ) เคลื่อนช้ากว่า จึงอยู่บนจอนานกว่า
 //           • ปืน 3D (VacuumGun) ถือมือข้างที่ยก, ลำแสงดูดจากปากปืนถึงเป้า
 // โหมดซ้อม (Practice): ขยะซ้อมโผล่ใกล้ ๆ และไม่เคลื่อน -> DidVacuum (ดูดได้ 1 ชิ้น), DidStep (ย่ำเท้าจนเร่ง)
@@ -65,9 +64,6 @@ namespace RTE
         Vector2 aim;                 // เป้าเล็ง (พิกเซลจากกึ่งกลางจอครึ่ง)
         int hand = -1;               // มือที่ถือปืน 0 ซ้าย / 1 ขวา / -1 ไม่ได้ยก
         float nextSpawnIn, toastTime, toastDur = 1;
-        Vector2 afkAnchor;           // จุดที่เป้าเล็งค้างอยู่ (ใช้ตรวจ AFK)
-        float stillTime;             // เป้าเล็งค้างอยู่ใกล้ afkAnchor มากี่วินาทีแล้ว
-        bool afk;                    // ค้างนานเกิน -> ดูดไม่ได้จนกว่าจะขยับ
 
         const float PassZ = 1.2f;    // ขยะเข้าใกล้กว่านี้ = เดินผ่านไปแล้ว
         const float RoadHalf = 1.3f; // ครึ่งความกว้างถนน (เมตร)
@@ -149,7 +145,7 @@ namespace RTE
             pieces.Clear();
             Score = Recycled = Combo = ImpactCollected = ImpactSpawned = 0;
             walk.Reset();
-            nextSpawnIn = 2; toastTime = 0; stillTime = 0; afk = false; toast.text = "";
+            nextSpawnIn = 2; toastTime = 0; toast.text = "";
             DidVacuum = DidStep = false;
             feverTime = overdriveTime = stunTime = dust = dustAge = eventTextTime = shiftY = 0; BannerUp = Rush = false;
             nextDangerIn = Random.Range(14f, 20f);
@@ -182,15 +178,14 @@ namespace RTE
                 var target = new Vector2((p.x - .5f) * LaneW, (p.y - .5f) * LaneH);
                 aim = Vector2.Lerp(aim, target, 1 - Mathf.Exp(-dt * 18));
             }
-            UpdateAfk(playing, dt);
-            hud.SetWarning(afk ? "ห้ามเล็งค้างที่เดิม!\nขยับมือเล็งขยะ" : "");
+            hud.SetWarning("");
 
             // 3) ข้อความเตือน
             UpdateToast(p, cameraOnline, playing, present, dt);
 
             // 4) ขยะ: เกิด, เลื่อน, เล็ง, ดูด
             TickEvents(playing, dt);
-            bool canSuck = playing && hand >= 0 && !afk && stunTime <= 0;
+            bool canSuck = playing && hand >= 0 && stunTime <= 0;
             TrashPiece target2 = null;
             if (showWorld)
             {
@@ -338,7 +333,7 @@ namespace RTE
             vortex.color = od ? new Color(1f, 1f, 1f, .8f + .2f * Mathf.Sin(Time.time * 14)) : Color.clear;
             vortex.rectTransform.anchoredPosition = aim;
             vortex.rectTransform.localRotation = Quaternion.Euler(0, 0, -Time.time * 220);
-            vortex.rectTransform.localScale = Vector3.one * (od ? 1 + .08f * Mathf.Sin(Time.time * 9) : 1);
+            vortex.rectTransform.localScale = Vector3.one * (settings.OverdriveAimScale / 2.4f) * (od ? 1 + .08f * Mathf.Sin(Time.time * 9) : 1);   // วังวนย่อตามวงเล็ง (ภาพออกแบบไว้ที่ 2.4 เท่า)
 
             // STUNNED: ไฟช็อตกระตุกที่ปืน
             if (stunTime > 0) stunTime -= dt;
@@ -361,21 +356,6 @@ namespace RTE
             dustHint.rectTransform.anchoredPosition = new Vector2(0, -130);
         }
 
-        // กัน AFK: เป้าเล็งต้องขยับออกจากจุดเดิมเกิน AfkMovePx ภายใน AfkSeconds ไม่งั้นดูดไม่ได้
-        void UpdateAfk(bool playing, float dt)
-        {
-            if (!playing || hand < 0) { stillTime = 0; afk = false; afkAnchor = aim; return; }
-            if (Vector2.Distance(aim, afkAnchor) > settings.AfkMovePx)
-            {
-                afkAnchor = aim; stillTime = 0; afk = false;
-                return;
-            }
-            stillTime += dt;
-            if (stillTime >= settings.AfkSeconds)
-            {
-                afk = true;
-            }
-        }
 
         // ขยะที่ใกล้เป้าเล็งที่สุด (จุดกลางขยะต้องอยู่ในวงเป้าเล็ง และเข้ามาในระยะดูดแล้ว)
         TrashPiece FindTargetUnderCrosshair()
@@ -400,7 +380,7 @@ namespace RTE
             return new Vector2(best.ScreenPos.x / LaneW + .5f, best.ScreenPos.y / LaneH + .5f);
         }
 
-        float HitRadius => settings.HitRadiusPx * (overdriveTime > 0 ? 2.4f : 1f);
+        float HitRadius => settings.HitRadiusPx * (overdriveTime > 0 ? settings.OverdriveAimScale : 1f);
 
         // ขยะเข้ามาใกล้กว่า SuckRange x ระยะเกิด แล้วหรือยัง (เช่น 0.5 = ต้องเดินเข้าไปเกินครึ่งทาง)
         bool InRange(TrashPiece t) => t.Z <= TrashPiece.SpawnZ * settings.SuckRange;
@@ -467,12 +447,12 @@ namespace RTE
         void DrawAim(bool showWorld, bool playing, bool present, TrashPiece target)
         {
             bool show = showWorld && hand >= 0;
-            float rs = overdriveTime > 0 ? 2.4f : 1f;
+            float rs = overdriveTime > 0 ? settings.OverdriveAimScale : 1f;
             crosshair.enabled = lockFill.enabled = crosshairDot.enabled = show;
             hint.enabled = playing && present && hand < 0;
             crosshair.rectTransform.anchoredPosition = aim;
             lockFill.fillAmount = target != null ? 1 : 0;
-            crosshair.color = stunTime > 0 ? new Color(.85f, .4f, 1f) : afk ? new Color(1f, .35f, .3f) : target != null ? new Color(.6f, 1f, .6f) : Color.white;
+            crosshair.color = stunTime > 0 ? new Color(.85f, .4f, 1f) : target != null ? new Color(.6f, 1f, .6f) : Color.white;
             crosshair.rectTransform.localRotation = Quaternion.Euler(0, 0, target != null ? Time.time * 180 : 0);
             crosshair.rectTransform.localScale = Vector3.one * rs * (target != null ? .85f + .1f * Mathf.Sin(Time.time * 20) : 1f);
         }

@@ -150,14 +150,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RTE.LastSeed
   Settings:
-    RoundSeconds: 120
+    RoundSeconds: 60
+    ShowTimer: 0
     StandbyHold: 2
     StandbyEmpty: 8
-    ResultSeconds: 12
-    ChargePerSecond: 0.35
+    ResultSeconds: 10
+    ChargePerSecond: 0.45
     SendPerSecond: 0.5
     StreamTravelSeconds: 0.35
-    GrowthPerUnit: 0.035
+    GrowthPerUnit: 0.05
     SyncMultiplier: 1
     SoloMultiplier: 0.35
     PerfectSyncWindow: 0.6
@@ -165,6 +166,10 @@ MonoBehaviour:
     BalanceMinMultiplier: 0.6
     BalanceMaxMultiplier: 1.25
     BalancedRatio: 0.8
+    StallHintSeconds: 8
+    StallAssistSeconds: 15
+    AssistChargeMultiplier: 1.8
+    AssistSoloMultiplier: 0.8
     ChargeSpread: 1
     PushElbowAngle: 150
     PushForeshorten: 0.9

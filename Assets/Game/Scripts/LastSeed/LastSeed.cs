@@ -158,7 +158,6 @@ namespace RTE
             ResetRound();
             for (int i = 0; i < 2; i++)
                 hud.SetHint(i, "เตรียมตัว...", i == 0 ? "Water Guardian" : "Sun Guardian", i == 0 ? SeedSettings.Water : SeedSettings.Sun);
-            Sfx.Play("countdown");
             yield return overlay.Countdown("ชูแขนเป็นตัว V = รับพลัง   •   ผลักฝ่ามือ = ส่งพลังให้ต้นไม้   •   ส่งพร้อมกัน ต้นไม้โตเร็ว!");
             state = State.Play;
         }
@@ -166,16 +165,18 @@ namespace RTE
         IEnumerator Finale()
         {
             state = State.Finale;
-            tree.Burst(140); tree.Celebrate(true);
+            tree.Burst(140);
             Sfx.Play("finale");
             Bgm.Play("bgm_finale");
-            hud.Root.SetActive(false);                                      // ฉากจบ: เหลือแต่ต้นไม้กับฉากหลัง
+            hud.Root.SetActive(false);                                      // ฉากจบ: ซ่อน HUD/แขน
             for (int i = 0; i < 2; i++) guardians[i].SetVisible(false);
             for (float t = 0; t < FinaleSeconds; t += Time.deltaTime)
             {
                 green = Mathf.SmoothStep(0, 1, t / (FinaleSeconds * .8f));
+                tree.Fade = 1f - green;                                     // ต้นไม้จางออกพร้อมฉากหลังเปลี่ยน เหลือแต่เมืองที่ฟื้นแล้ว
                 yield return null;
             }
+            tree.Fade = 0f;
             yield return ShowResult(true);
         }
 

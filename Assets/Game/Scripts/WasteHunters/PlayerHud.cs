@@ -52,7 +52,7 @@ namespace RTE
             goal = UIKit.Label("Value", goalFrame.transform, "", 58, new Color(1f, .85f, .2f));
             goal.rectTransform.anchoredPosition = new Vector2(62, -14);
 
-            // ข้อความเตือน (เช่น เล็งค้างที่เดิม) วางข้างช่อง GOAL ไม่บังพื้นที่เล่น
+            // ข้อความเตือนรายฝั่ง วางข้างช่อง GOAL ไม่บังพื้นที่เล่น
             warning = UIKit.Label($"P{slot}Warning", parent, "", 36, new Color(1f, .45f, .35f),
                                   left ? TextAnchor.LowerLeft : TextAnchor.LowerRight);
             UIKit.Anchor(warning.rectTransform, new Vector2(left ? 0 : 1, 0), new Vector2(420 * side, 50));   // ข้างกรอบ RECYCLED (กว้าง 380)

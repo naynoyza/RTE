@@ -96,6 +96,7 @@ namespace RTE
             foreach (var s in new[] { "3", "2", "1", "GO!" })
             {
                 big.text = s;
+                if (s == "GO!") Sfx.Play("count_go"); else Sfx.Play("count_beep");   // เสียงตรงกับตัวเลขที่ขึ้นทุกตัว
                 for (float t = 0; t < .9f; t += Time.deltaTime)
                 {
                     big.rectTransform.localScale = Vector3.one * UIKit.EaseOutBack(Mathf.Min(1, t / .3f));

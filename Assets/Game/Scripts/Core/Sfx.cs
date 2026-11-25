@@ -2,7 +2,7 @@
 // Sfx — เล่นเสียงเอฟเฟคสั้น ๆ จาก Resources/Audio/<ชื่อ> (ไม่ต้องวางอะไรในฉาก สร้างตัวเล่นเสียงเองครั้งแรกที่เรียก)
 // -----------------------------------------------------------------------------------------------------
 // ตัวอย่าง: Sfx.Play("collect");  Sfx.Play("tick", .5f);  Sfx.Play("send", .7f, 1.1f);
-// ชื่อเสียง: tick lock ready teleport warp flash countdown collect rare stun overdrive fever dust rush danger
+// ชื่อเสียง: tick lock ready teleport warp flash count_beep count_go collect rare stun overdrive fever dust rush danger
 //            result sync stage finale send charged join alert step
 //            (ไฟล์ต้นฉบับอยู่ใน "Sound effect/" ที่ root ของ repo; join/alert/step มาจาก "Audio Interface")
 // =====================================================================================================

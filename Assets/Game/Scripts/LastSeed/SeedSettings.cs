@@ -16,19 +16,19 @@ namespace RTE
     public class SeedSettings
     {
         [Header("รอบเกม")]
-        public float RoundSeconds = 120f;       // เวลาต่อรอบ (ใช้เมื่อ ShowTimer เปิด)
+        public float RoundSeconds = 60f;        // เวลาต่อรอบ (ใช้เมื่อ ShowTimer เปิด)
         public bool ShowTimer = false;          // มีเวลาจำกัดไหม (ปิด = ไม่จับเวลาเลย เล่นจนต้นไม้โตเต็มแล้วจบ)
         public float StandbyHold = 2f;          // ครบ 2 คนค้างกี่วินาทีจึงเริ่ม
         public float StandbyEmpty = 8f;         // (ใช้กับหน้าจุดยืน) ไม่มีใครกี่วินาที
-        public float ResultSeconds = 12f;       // หน้าสรุปผลค้างกี่วินาที
+        public float ResultSeconds = 10f;       // หน้าสรุปผลค้างกี่วินาที
 
         [Header("เกจพลัง (0..1)")]
-        public float ChargePerSecond = .35f;    // ชูแขนค้าง ~3 วินาที = เต็ม
+        public float ChargePerSecond = .45f;    // ชูแขนค้าง ~2.2 วินาที = เต็ม
         public float SendPerSecond = .5f;       // ผลักค้าง ~2 วินาที = หมด
         public float StreamTravelSeconds = .35f;// น้ำ/แสงใช้เวลาวิ่งจากมือถึงต้นไม้ (ยังไม่นับจนกว่าจะถึง)
 
         [Header("การเติบโต")]
-        public float GrowthPerUnit = .035f;     // พลัง 1 หน่วยที่ถึงต้นไม้ = โตกี่ส่วน (1 = 100%)
+        public float GrowthPerUnit = .05f;      // พลัง 1 หน่วยที่ถึงต้นไม้ = โตกี่ส่วน (1 = 100%)
         public float SyncMultiplier = 1f;       // ส่งพร้อมกันทั้งคู่
         [Range(0, 1)] public float SoloMultiplier = .35f;   // ส่งคนเดียว (ไม่พร้อมกัน) -> โตช้าลง
         public float PerfectSyncWindow = .6f;   // เริ่มส่งห่างกันไม่เกินกี่วินาที = PERFECT SYNC
@@ -38,8 +38,8 @@ namespace RTE
         [Range(0, 1)] public float BalancedRatio = .8f; // น้อย/มาก ≥ ค่านี้ = ถือว่า "สมดุล"
 
         [Header("ตัวช่วยเมื่อต้นไม้ไม่โต (ไม่มีเวลาจำกัด จึงต้องกันรอบค้าง)")]
-        public float StallHintSeconds = 12f;        // ต้นไม้ไม่โตนานเท่านี้ = ขึ้นการ์ดเตือนท่า (V -> ผลัก)
-        public float StallAssistSeconds = 25f;      // ไม่โตนานเท่านี้ = เปิดตัวช่วยจนจบรอบ
+        public float StallHintSeconds = 8f;         // ต้นไม้ไม่โตนานเท่านี้ = ขึ้นการ์ดเตือนท่า (V -> ผลัก)
+        public float StallAssistSeconds = 15f;      // ไม่โตนานเท่านี้ = เปิดตัวช่วยจนจบรอบ
         public float AssistChargeMultiplier = 1.8f; // ตัวช่วย: ชาร์จพลังเร็วขึ้นกี่เท่า
         [Range(0, 1)] public float AssistSoloMultiplier = .8f;   // ตัวช่วย: ส่งคนเดียวก็โตเกือบเต็มอัตรา
 

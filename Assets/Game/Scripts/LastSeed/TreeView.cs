@@ -69,7 +69,10 @@ namespace RTE
             Set(0, 0, 0, true);
         }
 
-        public void Reset() { shown = 0; receive = 0; pulse = 0; stageNow = 0; SeedKit.Rate(leaves, 0); Set(0, 0, 0, true); }
+        /// <summary>ความทึบของต้นไม้ทั้งต้น (1 = เห็นเต็ม, 0 = หายไป) — ฉากจบใช้จางต้นไม้ออกให้เหลือแต่เมืองที่ฟื้นแล้ว</summary>
+        public float Fade = 1f;
+
+        public void Reset() { shown = 0; receive = 0; pulse = 0; stageNow = 0; Fade = 1f; SeedKit.Rate(leaves, 0); Set(0, 0, 0, true); }
 
         /// เปลี่ยนระดับ / PERFECT SYNC: พลุแสง + เด้ง
         public void Burst(int count = 60) { burst.Emit(count); pulse = 1; }
@@ -95,8 +98,8 @@ namespace RTE
                 float inStage = Mathf.Clamp01(Mathf.InverseLerp(StageStart[i], end, shown));
                 float scale = Mathf.Lerp(.8f, 1f, inStage) * (i == st ? 1 : Mathf.Lerp(1.08f, 1f, weight[i]));
                 trees[i].transform.localScale = glowTrees[i].transform.localScale = Vector3.one * scale;
-                trees[i].color = new Color(1, 1, 1, weight[i]);
-                glowTrees[i].color = new Color(.55f, .75f, .35f, weight[i] * (.45f * receive + .6f * pulse));
+                trees[i].color = new Color(1, 1, 1, weight[i] * Fade);
+                glowTrees[i].color = new Color(.55f, .75f, .35f, weight[i] * (.45f * receive + .6f * pulse) * Fade);
                 height += stageH[i] * scale * weight[i];
             }
             Target = Base + new Vector3(0, Mathf.Max(.6f, height * .55f), 0);
@@ -107,7 +110,7 @@ namespace RTE
             sway.localRotation = Quaternion.Euler(0, 0, Mathf.Sin(Time.time * 1.3f) * (.6f + 1.2f * shown));
 
             glow.transform.position = Target;
-            glow.color = new Color(.8f, 1f, .6f, .15f + .15f * shown + .55f * receive + .5f * pulse);
+            glow.color = new Color(.8f, 1f, .6f, (.15f + .15f * shown + .55f * receive + .5f * pulse) * Fade);
             glow.transform.localScale = Vector3.one * (1.3f + height * .9f);
             sparks.transform.position = Target; burst.transform.position = Target;
             var sh = sparks.shape; sh.radius = .5f + height * .35f;

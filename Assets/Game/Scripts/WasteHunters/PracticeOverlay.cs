@@ -65,7 +65,7 @@ namespace RTE
             }
             var foot = UIKit.Panel("Footer", panel.transform, new Vector2(690, 70), new Color(.05f, .05f, .06f, 1));
             foot.rectTransform.anchoredPosition = new Vector2(0, -210);
-            UIKit.Label("Warn", foot.transform, "◎  ขยับมือตลอด อย่าเล็งค้าง ไม่งั้นวงเล็งจะแดงล็อค", 30, new Color(1f, .3f, .25f));
+            UIKit.Label("Warn", foot.transform, "◎  ระวังขยะช็อตไฟ (DANGER) ห้ามดูด!", 30, new Color(1f, .3f, .25f));
 
             // เช็กลิสต์ + READY! ของแต่ละฝั่ง (เหนือช่อง GOAL)
             for (int i = 0; i < 2; i++)

@@ -64,7 +64,7 @@ namespace RTE
                 case "tutorial": GoPractice(); break;
                 case "done1": lanes[0].DidVacuum = lanes[0].DidStep = true; break;
                 case "done2": lanes[1].DidVacuum = lanes[1].DidStep = true; break;
-                case "fever": events.StartFever(lanes); break;
+                case "fever": events.StartFever(lanes, Settings.FeverSeconds); break;
                 case "dust": events.StartDust(lanes); break;
                 case "stun": lanes[1].DebugStun(); break;
                 case "danger": foreach (var l in lanes) l.SpawnDanger(); break;
@@ -140,7 +140,6 @@ namespace RTE
             foreach (var lane in lanes) { lane.Practice = false; lane.Reset(); }
             events.Reset();
             timeLeft = Settings.RoundSeconds; timer.Set(timeLeft);
-            Sfx.Play("countdown");
             yield return overlay.Countdown();
             state = State.Play;
         }
@@ -151,7 +150,7 @@ namespace RTE
             hudRoot.SetActive(false);                     // ซ่อนคะแนน/เวลา ไม่ให้ทับหน้าสรุปผล
             overlay.ShowResult(lanes[0], lanes[1]);
             Sfx.Play("result");
-            yield return new WaitForSeconds(10f);
+            yield return new WaitForSeconds(Settings.ResultSeconds);
             if (GameSession.Active) UnityEngine.SceneManagement.SceneManager.LoadScene(GameSession.Game2Scene);   // ไปเกม 2
             else GoCover();
         }
@@ -189,7 +188,7 @@ namespace RTE
                 case State.Play:       // นับเวลา และเช็กว่าจบหรือยัง
                     timeLeft -= Time.deltaTime;
                     timer.Set(timeLeft);
-                    events.Tick(Settings.RoundSeconds - timeLeft, lanes);
+                    events.Tick(Settings.RoundSeconds - timeLeft, lanes, Settings);
                     bool rush = timeLeft <= Settings.RushSeconds;      // FINAL RUSH: วินาทีท้าย ๆ ขยะถี่ขึ้น + คะแนนคูณ
                     if (rush && !lanes[0].Rush) events.StartRush(Settings);
                     foreach (var l in lanes) l.Rush = rush;

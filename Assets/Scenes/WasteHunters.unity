@@ -150,8 +150,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RTE.WasteHunters
   Settings:
-    RoundSeconds: 150
-    Goal: 20
+    RoundSeconds: 90
+    ResultSeconds: 8
+    RushSeconds: 20
+    RushSpawnScale: 0.55
+    RushScoreMultiplier: 2
+    FeverAt:
+    - 20
+    - 60
+    FeverSeconds: 6
+    DustAt: 40
     StandbyHold: 2
     StandbyEmpty: 8
     BaseSpeed: 1.4
@@ -159,8 +167,7 @@ MonoBehaviour:
     FullStepRate: 2.4
     HitRadiusPx: 58
     SuckRange: 0.25
-    AfkSeconds: 3
-    AfkMovePx: 90
+    OverdriveAimScale: 1.6
     TrashScale: 1.3
     HardSlowdown: 0.45
 --- !u!114 &1109277494

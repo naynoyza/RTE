@@ -29,7 +29,7 @@ namespace RTE
         readonly float[] cardPickT = { 9, 9 };
         readonly Image[] progress = new Image[2], progressTrack = new Image[2];
         readonly Text[] progressNum = new Text[2];
-        const float ProgressY = -110;   // วงโหลดลอยเหนือวงเลือก (ไม่จมไปกับวงบนพื้น)
+        const float ProgressY = 320;    // วงโหลดลอยเหนือหัวตัวละคร (หัวโมเดลอยู่ราว y = +200)
         readonly Text[] pLabel = new Text[2];
         readonly ModelStage[] stages = new ModelStage[2];
         readonly RingFx[] ringFx = new RingFx[2];
@@ -154,9 +154,9 @@ namespace RTE
 
 
                 // วงโหลดยกแขนค้าง: รางจาง ๆ + วงเติมสีผู้เล่น + ตัวเลขนับถอยหลังตรงกลาง
-                progressTrack[i] = UIKit.Img($"ProgressTrack{i + 1}", zoomLayer, UIKit.Load("ui2/hold_ring"), new Vector2(190, 190), false);
+                progressTrack[i] = UIKit.Img($"ProgressTrack{i + 1}", zoomLayer, UIKit.Load("ui2/hold_ring"), new Vector2(160, 160), false);
                 progressTrack[i].rectTransform.anchoredPosition = new Vector2(x, ProgressY);
-                progress[i] = UIKit.Img($"Progress{i + 1}", zoomLayer, UIKit.Load("ui2/hold_ring"), new Vector2(190, 190), false);
+                progress[i] = UIKit.Img($"Progress{i + 1}", zoomLayer, UIKit.Load("ui2/hold_ring"), new Vector2(160, 160), false);
                 progress[i].type = Image.Type.Filled; progress[i].fillMethod = Image.FillMethod.Radial360;
                 progress[i].fillOrigin = (int)Image.Origin360.Top; progress[i].fillClockwise = true;
                 progress[i].color = PColor(i);
@@ -229,9 +229,8 @@ namespace RTE
                     if (ready[i]) continue;
                     bool up = ArmRaise.BothUp(players[i], i, online);
                     readyHold[i] = up ? readyHold[i] + dt : Mathf.Max(0, readyHold[i] - dt * 2);
-                    progress[i].fillAmount = readyHold[i] / LaunchSequence.ReadyHold;
-                    progressTrack[i].color = new Color(1, 1, 1, .2f);
-                    progressNum[i].text = "";
+                    // วงโหลดเหนือหัวใช้เฉพาะตอนเลือกตัวละคร — เลือกเสร็จแล้วซ่อน (ความคืบหน้า READY CHECK ดูที่แสงวงจุดยืน)
+                    progress[i].fillAmount = 0; progressTrack[i].color = Color.clear; progressNum[i].text = "";
                     pLabel[i].text = $"P{i + 1}: ชูแขน 2 ข้าง!";
                     if (readyHold[i] >= LaunchSequence.ReadyHold)
                     {
