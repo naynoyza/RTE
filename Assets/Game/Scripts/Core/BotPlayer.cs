@@ -137,6 +137,7 @@ namespace RTE
                 p.use = handUp ? 1 : -1;
                 p.x = aim.x; p.y = aim.y;
                 p.kp = (float[])kp.Clone();
+                p.pose = null; p.track = true; p.range = "ok"; p.scan = 1;
                 p.handL = p.handR = noHand;
             }
 

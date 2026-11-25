@@ -314,7 +314,7 @@ namespace RTE
             {
                 TickPractice(dt);
                 hud.SetGauges(gauge[0], gauge[1]);
-                for (int i = 0; i < 2; i++) hud.SetSkeleton(i, online && players[i].present ? players[i].kp : null, dt);
+                for (int i = 0; i < 2; i++) hud.SetSkeleton(i, online && players[i].present ? players[i].kp : null, dt, online && players[i].present ? players[i].pose : null);
                 hud.Tick(dt);
             }
             else
@@ -325,7 +325,7 @@ namespace RTE
                 hud.SetBalance(lean, ratio, balMul, balanced, dt);
                 hud.SetSync(both, solo, syncMul);
                 for (int i = 0; i < 2; i++) UpdateHint(i, sending);
-                for (int i = 0; i < 2; i++) hud.SetSkeleton(i, online && players[i].present ? players[i].kp : null, dt);
+                for (int i = 0; i < 2; i++) hud.SetSkeleton(i, online && players[i].present ? players[i].kp : null, dt, online && players[i].present ? players[i].pose : null);
                 hud.Tick(dt);
             }
 

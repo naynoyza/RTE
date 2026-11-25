@@ -172,7 +172,7 @@ namespace RTE
             float metersThisFrame = walk.Tick(p, cameraOnline, playing, dt);
             road.SetDistance(walk.Walked);
             hud.SetSpeed(walk.Speed / settings.MaxSpeed, walk.Boost, playing);
-            hud.SetSkeleton(present ? p.kp : null, dt);
+            hud.SetSkeleton(present ? p.kp : null, dt, present ? p.pose : null);
             if (Practice && walk.Boost > .35f) DidStep = true;
 
             // 2) มือที่เล็ง: ตำแหน่งมือ 0..1 -> พิกเซลบนจอ (ทำให้นุ่มไม่กระตุก)

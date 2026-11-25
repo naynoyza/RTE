@@ -215,7 +215,7 @@ namespace RTE
             hint[i].text = th; hint[i].color = color; hintEn[i].text = en;
         }
 
-        public void SetSkeleton(int i, float[] kp, float dt) => skeleton[i].Set(kp, dt);
+        public void SetSkeleton(int i, float[] kp, float dt, float[] pose = null) => skeleton[i].Set(kp, dt, pose);
 
         /// <summary>แสดง/ซ่อนการ์ดเตือนท่า (ค่อย ๆ ปรากฏ/จาง) — LastSeed เรียกทุกเฟรมขณะเล่น</summary>
         public void SetStallHint(bool on) => stallOn = on;

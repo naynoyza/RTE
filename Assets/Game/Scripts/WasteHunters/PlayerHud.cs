@@ -79,6 +79,6 @@ namespace RTE
             speedBadge.rectTransform.localScale = Vector3.one * (level == 2 && playing ? 1 + .08f * Mathf.Sin(Time.time * 14) : 1);
         }
 
-        public void SetSkeleton(float[] kp, float dt) => skeleton.Set(kp, dt);
+        public void SetSkeleton(float[] kp, float dt, float[] pose = null) => skeleton.Set(kp, dt, pose);
     }
 }

@@ -30,6 +30,10 @@ namespace RTE
         public int use = -1;             // มือที่เล็ง: 0 = ซ้าย, 1 = ขวา, -1 = ไม่ได้ยก
         public float x = .5f, y = .5f;   // ตำแหน่งมือที่เล็งบนจอของตัวเอง (0..1, y = 1 คือบนสุด)
         public float[] kp;               // จุดกระดูก 17 จุด จาก YOLO (ตัว + ขา) [x, y, ความมั่นใจ] x 17 (0..1 ของภาพกล้อง, y ลงล่าง)
+        public float[] pose;             // โครงกระดูกเต็ม 33 จุด จาก MediaPipe [x, y, z, มองเห็น] x 33 (null = ยังไม่มี / นอกระยะ)
+        public bool track;               // อยู่ในระยะ 2-3 ม. (จับกระดูกอยู่) — present แต่ track = false: ล็อคไว้แต่ใกล้/ไกลเกิน
+        public string range = "?";       // "ok" ในระยะ | "near" ใกล้กว่า 2 ม. | "far" ไกลกว่า 3 ม. | "hidden" มีคนบังอยู่ (ยังล็อคคนเดิม) | "?" ไม่รู้
+        public float scan;               // ความคืบหน้าการสแกนเข้าจุดยืน 0..1 (1 = ล็อคแล้ว)
         public TrackedHand handL = new TrackedHand();   // มือฝั่งซ้ายจอ (= มือซ้ายของผู้เล่น เพราะภาพกลับซ้าย-ขวา) จาก MediaPipe
         public TrackedHand handR = new TrackedHand();   // มือฝั่งขวาจอ
     }

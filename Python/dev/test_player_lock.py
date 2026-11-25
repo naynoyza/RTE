@@ -173,5 +173,107 @@ class CloseRange(unittest.TestCase):
         self.assertEqual(r[2]["id"], 2)
 
 
+# ▸ ทดสอบกติกาใหม่: จุดยืน (สแกน) 2.5-3 ม. ห่างกลาง 1 ม., ไม่นับคนที่ 3, ล็อคคนเดิมด้วยสีเสื้อผ้า
+class Zones(unittest.TestCase):
+    RED, BLUE, GREEN = [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]
+
+    def L(self):
+        return PlayerLock(min_m=2.0, join_near=2.5, join_m=3.0, zone_x=1.0, zone_r=0.5, scan_s=1.0,
+                          lock_until_gone=True, lost_grace=3.0, leave_m=99.0)
+
+    def person(self, i, lx, d, sig, w=0.15, h=0.55):
+        cx = 0.5 + lx / 4.0
+        return {"id": i, "box": (cx - w / 2, 0.3, cx + w / 2, 0.3 + h), "dist": d, "lx": lx, "sig": sig}
+
+    def scan(self, L, people, t0=0.0, secs=1.2):
+        t = t0
+        while t <= t0 + secs:
+            r = L.update(people, now=t)
+            t += 0.1
+        return r, t
+
+    def test_must_stand_in_zone_for_scan_time(self):
+        L = self.L()
+        p = self.person(1, -1.0, 2.7, self.RED)
+        self.assertIsNone(L.update([p], now=0)[1])
+        self.assertIsNone(L.update([p], now=0.5)[1])
+        self.assertAlmostEqual(L.slots[0].scan, 0.5, delta=0.01)
+        self.assertEqual(L.update([p], now=1.05)[1]["id"], 1)
+
+    def test_outside_band_or_zone_not_scanned(self):
+        L = self.L()
+        for p in (self.person(1, -1.0, 2.2, self.RED),     # 2.2 m: too close for the scan band
+                  self.person(1, -1.0, 3.4, self.RED),     # 3.4 m: too far
+                  self.person(1, 0.0, 2.7, self.RED)):     # in the middle: between the zones
+            L.reset()
+            r, _ = self.scan(L, [p])
+            self.assertIsNone(r[1]); self.assertIsNone(r[2])
+
+    def test_third_person_never_counted(self):
+        L = self.L()
+        r, t = self.scan(L, [self.person(1, -1.0, 2.7, self.RED), self.person(2, 1.0, 2.7, self.BLUE)])
+        self.assertEqual((r[1]["id"], r[2]["id"]), (1, 2))
+        crowd = [self.person(1, -1.0, 2.7, self.RED), self.person(2, 1.0, 2.7, self.BLUE),
+                 self.person(3, -0.9, 2.6, self.GREEN)]
+        r, _ = self.scan(L, crowd, t, 3.0)
+        self.assertEqual((r[1]["id"], r[2]["id"]), (1, 2))
+
+    def test_ids_swapped_by_tracker_are_swapped_back(self):
+        L = self.L()
+        _, t = self.scan(L, [self.person(1, -1.0, 2.7, self.RED), self.person(2, 1.0, 2.7, self.BLUE)])
+        r = L.update([self.person(2, -1.0, 2.7, self.RED), self.person(1, 1.0, 2.7, self.BLUE)], now=t)
+        self.assertEqual(r[1]["sig"], self.RED)
+        self.assertEqual(r[2]["sig"], self.BLUE)
+
+    def test_lost_player_readopted_only_by_same_clothes(self):
+        L = self.L()
+        _, t = self.scan(L, [self.person(1, -1.0, 2.7, self.RED)])
+        r = L.update([self.person(5, -1.0, 2.7, self.GREEN)], now=t + 0.5)   # stranger steps in the spot
+        self.assertIsNone(r[1])
+        r = L.update([self.person(5, -1.0, 2.7, self.GREEN), self.person(6, -0.8, 2.7, self.RED)], now=t + 1.0)
+        self.assertEqual(r[1]["id"], 6)                                     # the player is back (new id)
+
+    def test_passer_by_taking_the_id_is_dropped(self):
+        L = self.L()
+        _, t = self.scan(L, [self.person(1, -1.0, 2.7, self.RED)])
+        r = L.update([self.person(1, -0.9, 2.7, self.GREEN), self.person(8, -1.0, 2.7, self.RED)], now=t)
+        self.assertEqual(r[1]["id"], 8)
+
+
+# ▸ ทดสอบคนมาบัง/ซ้อนผู้เล่น: ช่องต้องไม่หลุด จนกว่าจุดที่ผู้เล่นยืนจะว่างจริง ๆ
+class Occlusion(Zones):
+    def L(self):
+        return PlayerLock(min_m=2.0, join_near=2.5, join_m=3.0, zone_x=1.0, zone_r=0.5, scan_s=1.0,
+                          lock_until_gone=True, lost_grace=1.5, leave_m=99.0, hold_max=15.0)
+
+    def test_stranger_in_front_holds_slot(self):
+        L = self.L()
+        _, t = self.scan(L, [self.person(1, -1.0, 2.7, self.RED)])
+        stranger = self.person(1, -1.0, 2.0, self.GREEN, w=0.2, h=0.7)   # tracker gave the id to the stranger
+        for k in range(60):                                             # 6 s in front of the player
+            r = L.update([stranger], now=t + k * 0.1)
+            self.assertIsNone(r[1])                                     # never follows the stranger
+            self.assertTrue(L.slots[0].locked)                          # ...but the slot is held
+        r = L.update([self.person(4, -1.0, 2.7, self.RED)], now=t + 6.1)  # stranger walks off, player seen again
+        self.assertEqual(r[1]["id"], 4)
+
+    def test_freed_only_when_spot_empty(self):
+        L = self.L()
+        _, t = self.scan(L, [self.person(1, -1.0, 2.7, self.RED)])
+        L.update([self.person(1, -1.0, 2.0, self.GREEN, w=0.2, h=0.7)], now=t)   # covered
+        L.update([], now=t + 0.5)                                               # spot empty from now
+        self.assertTrue(L.slots[0].locked)
+        L.update([], now=t + 2.1)                                               # > lost_grace empty
+        self.assertFalse(L.slots[0].locked)
+
+    def test_hold_has_a_limit(self):
+        L = self.L()
+        _, t = self.scan(L, [self.person(1, -1.0, 2.7, self.RED)])
+        stranger = self.person(1, -1.0, 2.0, self.GREEN, w=0.2, h=0.7)
+        L.update([stranger], now=t)
+        L.update([stranger], now=t + 16.0)
+        self.assertFalse(L.slots[0].locked)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

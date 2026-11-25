@@ -112,9 +112,10 @@ namespace RTE
             string who = $"PLAYER {i + 1}: ";
             string text;
             if (ready) text = who + "มาแล้ว ✓";
-            else if (online && p.approach > 0 && p.approach < 2f) text = who + "ใกล้เกินไป ถอยหลัง";
-            else if (online && p.approach > 3f) text = who + "ไกลเกินไป เดินเข้ามา";
-            else if (online && p.approach > 0) text = who + "ตรวจจับ... ยืนนิ่ง ๆ";
+            else if (online && p.scan > 0) text = who + $"กำลังสแกน {Mathf.RoundToInt(p.scan * 100)}% ยืนนิ่ง ๆ";
+            else if (online && p.approach > 0 && p.approach < 2.5f) text = who + "ใกล้เกินไป ถอยหลัง (2.5-3 ม.)";
+            else if (online && p.approach > 3f) text = who + "ไกลเกินไป เดินเข้ามา (2.5-3 ม.)";
+            else if (online && p.approach > 0) text = who + "เดินไปยืนในวงของตัวเอง";
             else text = who + "ตรวจจับ...\n(WAITING...)";
             status[i].text = text;
             status[i].color = ready ? Color.green : PColor(i);

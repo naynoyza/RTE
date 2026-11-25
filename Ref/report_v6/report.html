@@ -1,20 +1,23 @@
 <!doctype html>
-<html lang="th"><head><meta charset="utf-8"><title>Report Reboot The Earth v5</title>
+<html lang="th"><head><meta charset="utf-8"><title>รายงาน Reboot The Earth</title>
 <style>
 @page { size: A4; margin: 14mm 13mm; }
 :root { --brand:#b8582a; --brand2:#d97a3a; --ink:#2b2520; --mute:#6b625b; --line:#f0dccd; --soft:#fdf5ef; --green:#5a8f3c; }
 * { box-sizing:border-box; }
 body { font-family:"Leelawadee UI","Tahoma",sans-serif; color:var(--ink); font-size:10.5pt; line-height:1.55; margin:0; }
 h1,h2,h3 { margin:0; }
-.cover { position:relative; height:262mm; border-radius:10px; overflow:hidden; color:#fff; page-break-after:always; }
-.cover img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
-.cover .shade { position:absolute; inset:0; background:linear-gradient(180deg,rgba(0,0,0,.05) 35%,rgba(20,10,5,.85) 78%); }
-.cover .txt { position:absolute; left:12mm; right:12mm; bottom:14mm; }
-.cover .kick { letter-spacing:.3em; font-size:8.5pt; opacity:.85; }
-.cover h1 { font-size:30pt; line-height:1.2; margin:6px 0 10px; }
-.cover p { margin:0; opacity:.92; }
-.ver { display:inline-block; background:var(--brand2); padding:2px 10px; border-radius:20px; font-size:9pt; margin-top:10px; }
 .sec { page-break-before:always; }
+h3 { break-after:avoid; page-break-after:avoid; }
+.head { border-bottom:3px solid var(--brand); padding:4mm 0 5mm; margin-bottom:6mm; }
+.head .kick { letter-spacing:.28em; font-size:8.5pt; color:var(--brand); font-weight:600; }
+.head h1 { font-size:24pt; line-height:1.25; margin:4px 0 6px; color:var(--ink); }
+.head p { color:var(--mute); margin:0; }
+.meta { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:0 0 6mm; }
+.meta div { border:1px solid var(--line); background:var(--soft); border-radius:7px; padding:7px 11px; font-size:9.6pt; }
+.meta b { display:block; color:var(--brand); font-size:10.5pt; }
+.g4 { display:grid; grid-template-columns:repeat(4,1fr); gap:7px; }
+.g4 img { width:100%; border-radius:6px; display:block; }
+.g4 .cap { text-align:center; color:var(--mute); font-size:8.6pt; margin-top:3px; }
 .band { background:linear-gradient(90deg,#8e3b17,var(--brand2)); color:#fff; border-radius:8px; padding:9px 16px 11px; margin-bottom:12px; }
 .band .k { font-size:8pt; letter-spacing:.25em; opacity:.85; }
 .band h2 { font-size:17pt; }
@@ -29,6 +32,8 @@ td:first-child { color:var(--brand); font-weight:600; }
 .fig { margin:6px 0 10px; page-break-inside:avoid; }
 .fig img { width:100%; border-radius:7px; display:block; }
 .fig .cap { text-align:center; color:var(--mute); font-size:8.8pt; margin-top:4px; }
+.fig.one img { width:84%; margin:0 auto; }
+.g3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
 .g2 { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
 .note { background:#eef5e8; border-left:4px solid var(--green); padding:8px 12px; border-radius:6px; margin:8px 0; font-size:9.8pt; }
 .new { background:#fff3e8; border-left:4px solid var(--brand2); padding:8px 12px; border-radius:6px; margin:8px 0; font-size:9.8pt; }
@@ -40,19 +45,16 @@ ul { margin:4px 0 8px; padding-left:20px; } li { margin-bottom:2px; }
 .p1 { background:#e3f0ff; color:#2f7fd9; } .p2 { background:#fff0e0; color:#d9731d; }
 </style></head><body>
 
-<!-- ================= COVER ================= -->
-<div class="cover">
-  <img src="img/15_finale.jpg">
-  <div class="shade"></div>
-  <div class="txt">
-    <div class="kick">รายงานภาพรวมโปรเจกต์ • INTERACTIVE BODY-TRACKING GAME</div>
-    <h1>Reboot The Earth<br>จากกองขยะ สู่เมล็ดพันธุ์สุดท้าย</h1>
-    <p>เกมสำหรับผู้เล่น 2 คน ควบคุมด้วยร่างกายผ่านกล้อง ไม่ต้องใช้จอยหรือเมาส์ ประกอบด้วย 2 ภารกิจต่อเนื่องกัน
-    เล่าเรื่องการทวงคืนลมหายใจในโลกที่ผู้คนชาชินกับการซื้ออากาศหายใจ</p>
-    <span class="ver">ฉบับที่ 5 • อัปเดตตามเกมที่สร้างจริง พร้อมภาพจากเกมทุกหน้าจอ</span>
-  </div>
+<div class="head">
+  <div class="kick">รายงานสรุปโปรเจกต์ • INTERACTIVE BODY-TRACKING GAME</div>
+  <h1>Reboot The Earth<br>จากกองขยะ สู่เมล็ดพันธุ์สุดท้าย</h1>
+  <p>เกมสำหรับผู้เล่น 2 คน ควบคุมด้วยร่างกายผ่านกล้อง ไม่ต้องใช้จอยหรือเมาส์ ประกอบด้วย 2 ภารกิจต่อเนื่องกัน
+  เล่าเรื่องการทวงคืนลมหายใจในโลกที่ผู้คนชาชินกับการซื้ออากาศหายใจ</p>
 </div>
-
+<div class="meta">
+  <div><b>ภารกิจที่ 1 • WASTE HUNTERS</b>Clean the City. Save the Air. แข่งกันเก็บขยะอิเล็กทรอนิกส์ 150 วินาที</div>
+  <div><b>ภารกิจที่ 2 • THE LAST SEED</b>Grow the Last Hope. ร่วมกันส่งน้ำและแสงแดดจนต้นไม้โตเต็มที่</div>
+</div>
 <!-- ================= Q1 STORY ================= -->
 <div class="band"><div class="k">Q1 • STORY</div><h2>เรื่องราวที่นำเสนอ และสิ่งที่ผู้เล่นจะได้รับ</h2></div>
 <h3>เรื่องย่อ</h3>
@@ -105,8 +107,8 @@ ul { margin:4px 0 8px; padding-left:20px; } li { margin-bottom:2px; }
 <tr><td>หน้าสรุปผล</td><td>กรอบผลแบบการ์ด 2 ฝั่ง สีของผู้เล่น วงกลางแสดงเกจ และดาว 1–3 ดวง</td></tr>
 <tr><td>แผงโครงกระดูก</td><td>กล่องเล็กแสดงโครงร่างกายสดของผู้เล่นแต่ละคน ให้รู้ว่ากล้องจับตัวเองได้อยู่</td></tr></table>
 <h3>หน้าปกและหน้าเลือกตัวละคร</h3>
-<div class="fig"><img src="img/01_cover.jpg"><div class="cap">หน้าปก: กรอบฟ้า (P1) และส้ม (P2) รอผู้เล่นครบ 2 คนยืนหน้ากล้อง</div></div>
-<div class="fig"><img src="img/02_select.jpg"><div class="cap">หน้าเลือกตัวละคร: ยกแขนซ้ายเลือก MALE แขนขวาเลือก FEMALE ค้าง 3 วินาที วงโหลดนับถอยหลังลอยเหนือแท่นยืนสีของผู้เล่น</div></div>
+<div class="g2"><div class="fig"><img src="img/01_cover.jpg"><div class="cap">หน้าปก: กรอบฟ้า (P1) และส้ม (P2) รอผู้เล่นครบ 2 คนยืนหน้ากล้อง</div></div>
+<div class="fig"><img src="img/02_select.jpg"><div class="cap">หน้าเลือกตัวละคร: ยกแขนซ้ายเลือก MALE แขนขวาเลือก FEMALE ค้าง 3 วินาที วงโหลดนับถอยหลังลอยเหนือแท่นยืนสีของผู้เล่น</div></div></div>
 
 <!-- ================= Q4 JOURNEY ================= -->
 <div class="sec"></div>
@@ -122,8 +124,9 @@ ul { margin:4px 0 8px; padding-left:20px; } li { margin-bottom:2px; }
 </ol>
 <div class="g2">
 <div class="fig"><img src="img/03_wh_practice.jpg"><div class="cap">หน้าสอนเล่นภารกิจ 1 บนฉากจริง: ซ้อมดูด 1 ชิ้น และย่ำเท้า</div></div>
-<div class="fig"><img src="img/04_wh_play.jpg"><div class="cap">ระหว่างเล่น: คะแนน เวลา เกจความเร็ว แผงโครงกระดูก และกรอบ RECYCLED</div></div></div>
-<h3>ขยะและคะแนน</h3>
+<div class="fig"><img src="img/04_go.jpg"><div class="cap">นับถอยหลัง 3-2-1 แล้วขึ้น GO! พร้อมคำอธิบายท่าสั้น ๆ</div></div></div>
+<div class="fig one"><img src="img/05_wh_play.jpg"><div class="cap">ระหว่างเล่น: คะแนน เวลา เกจความเร็ว แผงโครงกระดูก และกรอบ RECYCLED ของแต่ละฝั่ง</div></div>
+<h3 style="break-before:page">ขยะและคะแนน</h3>
 <table><tr><th>ระดับอันตราย</th><th>ตัวอย่าง</th><th>คะแนน</th></tr>
 <tr><td>ต่ำ</td><td>สายไฟ / หลอดไฟเก่า</td><td>10</td></tr>
 <tr><td>ปานกลาง</td><td>โทรศัพท์เก่า</td><td>20</td></tr>
@@ -136,13 +139,13 @@ ul { margin:4px 0 8px; padding-left:20px; } li { margin-bottom:2px; }
 <tr><td>DUST STORM</td><td>วินาทีที่ 65</td><td>ฝุ่นบังหน้ากาก ต้องปัดมือไปมาเช็ด</td></tr>
 <tr><td>OVERDRIVE</td><td>Combo ครบ 8 ชิ้น</td><td>วงดูดใหญ่ขึ้น ดูดหลายชิ้นพร้อมกัน 5 วินาที</td></tr>
 <tr><td>DANGER / STUNNED</td><td>ขยะช็อตไฟโผล่ทุก 14–22 วินาที</td><td>ถ้าดูดจะโดนช็อต 2 วินาที เสียคะแนนและ Combo</td></tr>
-<tr><td>FINAL RUSH <b class="o">(ใหม่)</b></td><td>30 วินาทีสุดท้าย</td><td>ขยะเกิดถี่ขึ้น ~1.8 เท่า คะแนน x2 นาฬิกาเป็นสีส้มและเต้น</td></tr></table>
+<tr><td>FINAL RUSH</td><td>30 วินาทีสุดท้าย</td><td>ขยะเกิดถี่ขึ้น ~1.8 เท่า คะแนน x2 นาฬิกาเป็นสีส้มและเต้น</td></tr></table>
 <div class="g2">
-<div class="fig"><img src="img/05_fever.jpg"><div class="cap">DAILY DUMP FEVER: ป้ายใหญ่กลางจอ โดรนทิ้งขยะ</div></div>
-<div class="fig"><img src="img/06_dust.jpg"><div class="cap">DUST STORM: ปัดมือไปมาเพื่อเช็ดหน้ากาก</div></div>
-<div class="fig"><img src="img/07_overdrive.jpg"><div class="cap">OVERDRIVE: ป้ายสถานะอยู่ตำแหน่งเดียวกับ STUNNED</div></div>
-<div class="fig"><img src="img/08_stun.jpg"><div class="cap">STUNNED: ดูดขยะช็อตไฟเข้าไป ปืนถูกไฟช็อต</div></div></div>
-<div class="fig"><img src="img/09_rush.jpg"><div class="cap">FINAL RUSH: 30 วินาทีสุดท้าย คะแนน x2 ขยะถี่ขึ้น</div></div>
+<div class="fig"><img src="img/06_fever.jpg"><div class="cap">DAILY DUMP FEVER: ป้ายใหญ่กลางจอ โดรนทิ้งขยะ</div></div>
+<div class="fig"><img src="img/07_dust.jpg"><div class="cap">DUST STORM: ปัดมือไปมาเพื่อเช็ดหน้ากาก</div></div>
+<div class="fig"><img src="img/08_overdrive.jpg"><div class="cap">OVERDRIVE: ป้ายสถานะอยู่ตำแหน่งเดียวกับ STUNNED</div></div>
+<div class="fig"><img src="img/09_stun.jpg"><div class="cap">STUNNED: ดูดขยะช็อตไฟเข้าไป ปืนถูกไฟช็อต</div></div></div>
+<div class="fig one"><img src="img/10_rush.jpg"><div class="cap">FINAL RUSH: 30 วินาทีสุดท้าย คะแนน x2 ขยะถี่ขึ้น</div></div>
 <h3>กติกาเสริม</h3>
 <table><tr><th>กติกา</th><th>ทำงานอย่างไร</th></tr>
 <tr><td>Combo</td><td>เก็บต่อเนื่อง 3 ชิ้น +10, 5 ชิ้น +20, 8 ชิ้น +40 ถ้าปล่อยขยะหลุดผ่านตัวไป Combo เริ่มใหม่</td></tr>
@@ -151,7 +154,7 @@ ul { margin:4px 0 8px; padding-left:20px; } li { margin-bottom:2px; }
 <tr><td>คำเตือนตำแหน่ง</td><td>ออกนอกกล้อง หรือยืนใกล้กล้องเกิน 1.3 เมตร มีข้อความเตือนในฝั่งของผู้เล่นคนนั้น</td></tr></table>
 <h3>หน้าสรุปผลภารกิจที่ 1</h3>
 <p>ป้าย WINNER พร้อมชื่อผู้ชนะ การ์ดคะแนนและจำนวนรีไซเคิลของแต่ละคน วงกลางแสดง<b class="o">"อากาศสะอาดขึ้น (ทั้งทีม)"</b> และดาว 1–3 ดวง ค้างไว้ 10 วินาทีแล้วไปภารกิจที่ 2</p>
-<div class="fig"><img src="img/10_wh_result.jpg"><div class="cap">หน้าสรุปผลภารกิจที่ 1</div></div>
+<div class="fig one"><img src="img/11_wh_result.jpg"><div class="cap">หน้าสรุปผลภารกิจที่ 1</div></div>
 
 <h3>ภารกิจที่ 2: THE LAST SEED (ไม่จับเวลา)</h3>
 <p>ทั้งสองคนสวมปลอกแขนแบบเดียวกัน ใช้ท่าเดียวกัน แต่ได้พลังคนละชนิด:
@@ -165,19 +168,26 @@ ul { margin:4px 0 8px; padding-left:20px; } li { margin-bottom:2px; }
 <li><b class="o">ต้นไม้ 4 ระยะ:</b> ต้นอ่อน → ต้นกล้า → ต้นไม้วัยรุ่น → โตเต็มที่</li>
 </ol>
 <div class="g2">
-<div class="fig"><img src="img/11_ls_practice.jpg"><div class="cap">หน้าสอนเล่นภารกิจที่ 2: ชูแขนตัว V แล้วผลักฝ่ามือพร้อมกัน</div></div>
-<div class="fig"><img src="img/12_ls_play.jpg"><div class="cap">ระหว่างเล่น: เกจพลังมีป้ายกำกับ แถบต้นไม้โต และแถบสมดุล</div></div>
-<div class="fig"><img src="img/13_sync.jpg"><div class="cap">PERFECT SYNC! ส่งน้ำและแสงพร้อมกัน</div></div>
-<div class="fig"><img src="img/14_stall.jpg"><div class="cap">การ์ดเตือนท่าเมื่อต้นไม้ไม่โต (ใหม่)</div></div></div>
-<div class="new"><b>ตัวช่วยเมื่อต้นไม้ไม่โต (ใหม่):</b> เพราะไม่จับเวลา จึงต้องกันรอบค้าง ถ้าต้นไม้ไม่โตเลย 12 วินาที จะขึ้นการ์ดเตือนท่า
+<div class="fig"><img src="img/12_ls_practice.jpg"><div class="cap">หน้าสอนเล่นภารกิจที่ 2: ชูแขนตัว V แล้วผลักฝ่ามือพร้อมกัน</div></div>
+<div class="fig"><img src="img/13_ls_play.jpg"><div class="cap">ระหว่างเล่น: เกจพลังมีป้ายกำกับ แถบต้นไม้โต และแถบสมดุล</div></div>
+<div class="fig"><img src="img/14_sync.jpg"><div class="cap">PERFECT SYNC! ส่งน้ำและแสงพร้อมกัน</div></div>
+<div class="fig"><img src="img/15_stall.jpg"><div class="cap">การ์ดเตือนท่าเมื่อต้นไม้ไม่โต</div></div></div>
+<div class="new"><b>ตัวช่วยเมื่อต้นไม้ไม่โต:</b> เพราะไม่จับเวลา จึงต้องกันรอบค้าง ถ้าต้นไม้ไม่โตเลย 12 วินาที จะขึ้นการ์ดเตือนท่า
 และถ้าไม่โตครบ 25 วินาที จะเปิดตัวช่วยจนจบรอบ (ชาร์จเร็วขึ้น 1.8 เท่า และส่งคนเดียวก็โตเกือบเต็มอัตรา) พร้อมข้อความ "ช่วยเร่งพลังให้แล้ว!"</div>
+<h3>การเติบโตของต้นไม้ 4 ระยะ</h3>
+<div class="g4">
+<div><img src="img/t1.jpg"><div class="cap">ระยะ 1 ต้นอ่อน</div></div>
+<div><img src="img/t2.jpg"><div class="cap">ระยะ 2 ต้นกล้า</div></div>
+<div><img src="img/t3.jpg"><div class="cap">ระยะ 3 ต้นไม้วัยรุ่น</div></div>
+<div><img src="img/t4.jpg"><div class="cap">ระยะ 4 โตเต็มที่</div></div></div>
+<div class="note">ทุกระยะเป็นภาพจากเกมขณะเล่นจริง (บอทจำลองผู้เล่น) ต้นไม้เปลี่ยนรูปทันทีเมื่อแถบ "ต้นไม้โต" ผ่านแต่ละช่วง</div>
 <h3>ฉากจบและหน้าสรุปผลภารกิจที่ 2</h3>
 <p>เมื่อต้นไม้โตครบ HUD และแขนจะหายไป 5 วินาที ฉากหลังค่อย ๆ เปลี่ยนเป็นเมืองที่ฟื้นแล้ว จากนั้นขึ้นป้าย TREE FULLY GROWN!
 การ์ดน้ำ/แสงแดด ความสมดุล สัดส่วนการส่งพร้อมกัน จำนวน PERFECT SYNC เวลาที่ใช้ และดาว แล้วกลับหน้าปกเพื่อรอผู้เล่นคู่ต่อไป</p>
-<div class="fig"><img src="img/15_finale.jpg"><div class="cap">ฉากจบ: เมืองที่ฟื้นแล้ว</div></div>
-<div class="g2">
-<div class="fig"><img src="img/16_ls_result.jpg"><div class="cap">หน้าสรุปผลภารกิจที่ 2</div></div>
-<div class="fig"><img src="img/17_back.jpg"><div class="cap">กลับหน้าปก พร้อมรับผู้เล่นคู่ใหม่</div></div></div>
+<div class="g3"><div class="fig"><img src="img/16_finale.jpg"><div class="cap">ฉากจบ: เมืองที่ฟื้นแล้ว</div></div>
+
+<div class="fig"><img src="img/17_ls_result.jpg"><div class="cap">หน้าสรุปผลภารกิจที่ 2</div></div>
+<div class="fig"><img src="img/18_back.jpg"><div class="cap">กลับหน้าปก พร้อมรับผู้เล่นคู่ใหม่</div></div></div>
 
 <!-- ================= Q5 IPO ================= -->
 <div class="sec"></div>
@@ -205,17 +215,7 @@ ul { margin:4px 0 8px; padding-left:20px; } li { margin-bottom:2px; }
 <h3>การทดสอบ</h3>
 <p>ทดสอบทั้งเกมด้วย<b class="o">บอทจำลองผู้เล่น 2 คน</b> (F3) ที่เล่นแบบคนจริง มีการตอบสนองช้า มือสั่น เล็งพลาด ลดแขนพัก และย่ำเท้าไม่สม่ำเสมอ
 P1 ตั้งนิสัย "เก่ง" P2 ตั้งนิสัย "มือใหม่" ไม่ต้องเปิดกล้อง ทดสอบครบทุกหน้าจอตั้งแต่หน้าปกจนวนกลับหน้าปก ไม่พบ error
-ภาพทดสอบทั้งหมดเก็บไว้ที่ <code>production/qa/evidence/</code></p>
-
-<h3>เปลี่ยนจากรายงานฉบับก่อน (v4 → v5)</h3>
-<table><tr><th>เรื่อง</th><th>v4</th><th>v5 (เกมปัจจุบัน)</th></tr>
-<tr><td>จบภารกิจ 1</td><td>หมดเวลา หรือรีไซเคิลครบ 20 ชิ้น</td><td>เล่นครบ 150 วินาทีเสมอ ไม่มีเป้าจำนวนชิ้น</td></tr>
-<tr><td>ช่วงท้ายภารกิจ 1</td><td>-</td><td>FINAL RUSH 30 วินาทีสุดท้าย คะแนน x2</td></tr>
-<tr><td>เวลาภารกิจ 2</td><td>120 วินาที</td><td>ไม่จับเวลา จบเมื่อต้นไม้โตครบ มีตัวช่วยกันค้าง</td></tr>
-<tr><td>สีผู้เล่น</td><td>แต่ละหน้าใช้สีต่างกัน</td><td>P1 ฟ้า / P2 ส้ม ตรงกันทุกหน้า</td></tr>
-<tr><td>เครื่องดูด</td><td>ทรงกระบอกพื้นฐาน</td><td>โมเดล 3D แขน+ปืน (ฟ้า/ส้ม)</td></tr>
-<tr><td>UI</td><td>ข้อความเป็นหลัก</td><td>ป้ายภาพทั้งชุด: FEVER, DUST, OVERDRIVE, STUNNED, DANGER, FINAL RUSH, เกจความเร็ว, RECYCLED, READY, TOGETHER, หน้าสรุปผลแบบการ์ดพร้อมดาว</td></tr>
-<tr><td>ตอนจบภารกิจ 2</td><td>ข้อความบนแผงมืด</td><td>ฉากจบเมืองฟื้น 5 วินาที แล้วหน้าสรุปผลที่ไม่บังต้นไม้</td></tr></table>
+ภาพประกอบทุกภาพในรายงานฉบับนี้มาจากการรันทดสอบรอบล่าสุด เก็บไว้ที่ <code>production/qa/evidence/report-2026-11-25/</code></p>
 
 <h3>สรุป</h3>
 <div class="note"><b>Reboot The Earth</b> ให้ผู้เล่น 2 คนใช้ร่างกายเป็นตัวควบคุมทั้งหมด เริ่มจากการแข่งกันเก็บขยะอิเล็กทรอนิกส์เพื่อหยุดสารพิษที่ทำลายดินและน้ำ

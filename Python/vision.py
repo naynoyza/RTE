@@ -17,6 +17,17 @@ HAND_BONES = [(0, 1), (1, 2), (2, 3), (3, 4), (0, 5), (5, 6), (6, 7), (7, 8), (5
               (9, 13), (13, 14), (14, 15), (15, 16), (13, 17), (0, 17), (17, 18), (18, 19), (19, 20)]
 GESTURES = {(0, 0, 0, 0): "fist", (1, 0, 0, 0): "point", (1, 1, 0, 0): "peace", (1, 1, 1, 1): "open"}
 
+POSE_TASK = os.path.join(HERE, "models", "pose_landmarker_full.task")
+POSE_URL = "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/latest/pose_landmarker_full.task"
+# MediaPipe Pose 33 joints: 0 nose | 1-3 L eye (in, centre, out) | 4-6 R eye | 7 L ear | 8 R ear | 9,10 mouth |
+# 11,12 shoulders | 13,14 elbows | 15,16 wrists | 17,18 pinky | 19,20 index | 21,22 thumb | 23,24 hips |
+# 25,26 knees | 27,28 ankles | 29,30 heels | 31,32 foot index (toes)   (L = person's left)
+POSE_BONES = [(0, 1), (1, 2), (2, 3), (3, 7), (0, 4), (4, 5), (5, 6), (6, 8), (9, 10),
+              (11, 12), (11, 13), (13, 15), (15, 17), (15, 19), (15, 21), (17, 19),
+              (12, 14), (14, 16), (16, 18), (16, 20), (16, 22), (18, 20),
+              (11, 23), (12, 24), (23, 24), (23, 25), (24, 26), (25, 27), (26, 28),
+              (27, 29), (28, 30), (29, 31), (30, 32), (27, 31), (28, 32)]
+
 
 class Body:
     """BGR frame -> [{"id", "box" (normalized x0,y0,x1,y1), "kps" (17,2) px, "kc" (17,)}]"""
@@ -155,3 +166,105 @@ class Hands:
             f, pinch, g = hand_shape(px)
             out[s] = {"px": px, "palm": px[[0, 5, 9, 13, 17], :2].mean(0), "f": f, "pinch": pinch, "g": g}
         return out
+
+
+def _crop_square(frame, cx, cy, side):
+    """side x side crop centred at (cx, cy), padded with grey where it leaves the image. -> crop, x0, y0"""
+    h, w = frame.shape[:2]
+    x0, y0 = int(cx - side / 2), int(cy - side / 2)
+    x1, y1 = x0 + side, y0 + side
+    crop = cv2.copyMakeBorder(frame[max(y0, 0):min(y1, h), max(x0, 0):min(x1, w)],
+                              max(0, -y0), max(0, y1 - h), max(0, -x0), max(0, x1 - w),
+                              cv2.BORDER_CONSTANT, value=(114, 114, 114))
+    return crop, x0, y0
+
+
+def appearance(bgr, p):
+    """Clothes colour signature of one person: HSV histogram of the torso + the thighs (sums to 1).
+    Used to keep a slot on the SAME person when the tracker's ids swap or a new id appears."""
+    h, w = bgr.shape[:2]
+    k, c = p["kps"], p["kc"]
+    bx0, by0, bx1, by1 = np.array(p["box"]) * [w, h, w, h]
+    bw, bh = bx1 - bx0, by1 - by0
+    if min(c[LS], c[RS], c[11], c[12]) > 0.4:
+        xs = [k[i][0] for i in (LS, RS, 11, 12)]
+        ax0, ax1 = min(xs), max(xs)
+        sy, hy = (k[LS][1] + k[RS][1]) / 2, (k[11][1] + k[12][1]) / 2
+        mx = 0.15 * (ax1 - ax0)
+        torso = (ax0 + mx, sy + 0.15 * (hy - sy), ax1 - mx, hy - 0.05 * (hy - sy))
+        legs = (ax0 + mx, hy + 0.05 * (hy - sy), ax1 - mx, hy + 0.6 * (hy - sy))
+    else:
+        torso = (bx0 + 0.3 * bw, by0 + 0.22 * bh, bx1 - 0.3 * bw, by0 + 0.48 * bh)
+        legs = (bx0 + 0.3 * bw, by0 + 0.52 * bh, bx1 - 0.3 * bw, by0 + 0.7 * bh)
+    parts = []
+    for x0, y0, x1, y1 in (torso, legs):
+        x0, x1 = int(np.clip(x0, 0, w)), int(np.clip(x1, 0, w))
+        y0, y1 = int(np.clip(y0, 0, h)), int(np.clip(y1, 0, h))
+        if (x1 - x0) * (y1 - y0) < 60:
+            continue
+        hsv = cv2.cvtColor(bgr[y0:y1, x0:x1], cv2.COLOR_BGR2HSV)
+        hist = cv2.calcHist([hsv], [0, 1], None, [16, 8], [0, 180, 0, 256]).ravel()
+        parts.append(hist / max(hist.sum(), 1.0))
+    if not parts:
+        return None
+    if len(parts) == 1:
+        parts.append(parts[0])
+    return np.concatenate(parts) / 2.0
+
+
+class Pose:
+    """MediaPipe Pose Landmarker for ONE player: all 33 joints (face, hands, heels, toes too) -> 
+    {"px": (33,3) x, y, z in camera pixels, "vis": (33,)}  or None.
+
+    Runs on a square crop around the player's YOLO box only. Other people's boxes inside the crop are
+    greyed out, so the skeleton can never jump to another person (no 3rd player)."""
+
+    CROP_PX = 320      # crop resized to this (the landmarker works at 256)
+    PAD = 0.12         # extra room around the box (fraction of the box size)
+
+    def __init__(self):
+        if not os.path.exists(POSE_TASK):
+            os.makedirs(os.path.dirname(POSE_TASK), exist_ok=True)
+            urllib.request.urlretrieve(POSE_URL, POSE_TASK)
+        V = mp.tasks.vision
+        with open(POSE_TASK, "rb") as f:   # pass bytes: MediaPipe can't open paths with Thai characters
+            model = f.read()
+        self.lm = V.PoseLandmarker.create_from_options(V.PoseLandmarkerOptions(
+            base_options=mp.tasks.BaseOptions(model_asset_buffer=model), running_mode=V.RunningMode.VIDEO,
+            num_poses=1, min_pose_detection_confidence=0.5, min_pose_presence_confidence=0.5,
+            min_tracking_confidence=0.5))
+        self.ts, self.want_reset = 0, True
+
+    def reset(self):   # safe while a background call is running: applied at the start of the next call
+        self.want_reset = True
+
+    def __call__(self, frame, p, others, t_ms):
+        if self.want_reset:
+            self.filt = OneEuro(1.2, 0.02)
+            self.want_reset = False
+        h, w = frame.shape[:2]
+        bx0, by0, bx1, by1 = np.array(p["box"]) * [w, h, w, h]
+        side = int(max(bx1 - bx0, by1 - by0) * (1 + 2 * self.PAD))
+        if side < 32:
+            return None
+        crop, x0, y0 = _crop_square(frame, (bx0 + bx1) / 2, (by0 + by1) / 2, side)
+        if others:   # grey out the other people (only where they are outside this player's own box)
+            mask = np.zeros(crop.shape[:2], np.uint8)
+            for ob in others:
+                ox0, oy0, ox1, oy1 = (np.array(ob) * [w, h, w, h] - [x0, y0, x0, y0]).astype(int)
+                cv2.rectangle(mask, (ox0, oy0), (ox1, oy1), 1, -1)
+            cv2.rectangle(mask, (int(bx0 - x0), int(by0 - y0)), (int(bx1 - x0), int(by1 - y0)), 0, -1)
+            crop = crop.copy()
+            crop[mask > 0] = 114
+        crop = cv2.resize(crop, (self.CROP_PX, self.CROP_PX),
+                          interpolation=cv2.INTER_LINEAR if side < self.CROP_PX else cv2.INTER_AREA)
+        self.ts = max(self.ts + 1, int(t_ms))
+        img = mp.Image(image_format=mp.ImageFormat.SRGB, data=np.ascontiguousarray(crop[:, :, ::-1]))
+        res = self.lm.detect_for_video(img, self.ts)
+        if not res.pose_landmarks:
+            self.filt.reset()
+            return None
+        lm = res.pose_landmarks[0]
+        px = np.array([[q.x * side + x0, q.y * side + y0, q.z * side] for q in lm])
+        vis = np.array([min(q.visibility or 0.0, q.presence or 0.0) for q in lm])
+        return {"px": self.filt(px, t_ms / 1000.0), "vis": vis}
