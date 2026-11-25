@@ -5,7 +5,8 @@
 // ระหว่างยกแขน: การ์ดฝั่งที่เล็งเรืองแสงสีผู้เล่น + ป้าย "P1 กำลังเลือก" + แถบเติม + เส้นพลังงานจากวงของผู้เล่นไปหาการ์ด
 // เลือกได้: การ์ดแฟลช + คลื่นวงแหวน + ป้าย "P1 ✓" เด้งขึ้น, โมเดล 3D ขึ้นยืนบนวงกลมฝั่งตัวเอง
 // ตัวที่ถูกอีกคนเลือกแล้วจะล็อค (เลือกซ้ำไม่ได้ ต้องใช้อีกตัว)
-// ได้ครบ 2 คน -> นับถอยหลัง 3 วิ -> วาร์ป: เสาแสงดูดตัวละครขึ้น -> อุโมงค์แสงความเร็วสูง -> แสงขาววาบ -> เข้าเกม
+// ได้ครบ 2 คน -> LaunchSequence: READY CHECK (ชูแขน 2 ข้างพร้อมกัน) -> TELEPORT เข้าเสาแสง -> WARP + การ์ดภารกิจ -> แฟลช
+//   -> WarpFlash จางจากขาวเผยฉากเกม -> Tick() คืน Done
 // P1 = ฝั่งซ้าย, P2 = ฝั่งขวา (สีจาก GameSettings.PlayerColors)
 // =====================================================================================================
 using UnityEngine;
@@ -16,7 +17,7 @@ namespace RTE
     public class CharacterSelect
     {
         public enum Result { Selecting, Done }
-        const float HoldSeconds = 3.5f, CountSeconds = 3f, WarpSeconds = 2.2f;
+        const float HoldSeconds = 3.5f;
 
         readonly RectTransform root, zoomLayer;
         readonly Text title, sub, centerStatus, big;
@@ -45,19 +46,13 @@ namespace RTE
         static readonly Vector2 CenterPos = new Vector2(0, 120);
         static Vector2 CardPos(int c) => CenterPos + new Vector2(c == 0 ? -152 : 152, 4);
 
-        // วาร์ป
-        const int Streaks = 64;
-        const int TunnelRings = 8;
-        readonly Image warpDim, vortex2, warpCore;
-        readonly Image[] tunnel = new Image[TunnelRings];   // วงแหวนอุโมงค์พุ่งเข้าหากล้อง
-        readonly Image[] beamUp = new Image[2], beamUpCore = new Image[2];
-        readonly Image[] streak = new Image[Streaks];
-        readonly float[] stAngle = new float[Streaks], stPhase = new float[Streaks], stSpeed = new float[Streaks];
-        readonly Text warpText;
-        readonly WarpFlash flash;
+        readonly WarpFlash flash;          // ขาวเต็มจอตอนจบ แล้วจางเผยฉากเกม
 
-        float countT, warpT;
-        int phase;   // 0 เลือก, 1 นับถอยหลัง, 2 วาร์ป
+        float countT, zoomT;
+        int phase;   // 0 เลือก, 1 READY CHECK, 2 ออกภารกิจ (teleport/warp/flash)
+        readonly float[] readyHold = new float[2];
+        readonly bool[] ready = new bool[2];
+        readonly LaunchSequence launch;
 
         static Color PColor(int i) => GameSettings.PlayerColors[i];   // P1 ฟ้า, P2 ส้ม — สีเดียวทั้งเกม
         static Color WithA(Color c, float a) => new Color(c.r, c.g, c.b, Mathf.Clamp01(a));
@@ -157,14 +152,6 @@ namespace RTE
                 ringFx[i] = new RingFx(fxBack, fxFront, feetSpot[i], PColor(i));
                 PlaceModel(i);
 
-                // เสาแสงวาร์ป (ดูดตัวละครขึ้นฟ้า)
-                beamUp[i] = UIKit.Img($"WarpBeam{i + 1}", zoomLayer, UIKit.Load("fx/light_beam"), new Vector2(260, 1500), false);
-                beamUp[i].rectTransform.pivot = new Vector2(.5f, 0);
-                beamUp[i].rectTransform.anchoredPosition = feetSpot[i] - new Vector2(0, 40);
-                beamUp[i].color = Color.clear;
-                beamUpCore[i] = UIKit.Panel($"WarpBeamCore{i + 1}", zoomLayer, new Vector2(40, 1500), Color.clear);
-                beamUpCore[i].rectTransform.pivot = new Vector2(.5f, 0);
-                beamUpCore[i].rectTransform.anchoredPosition = feetSpot[i] - new Vector2(0, 40);
 
                 // วงโหลดยกแขนค้าง: รางจาง ๆ + วงเติมสีผู้เล่น + ตัวเลขนับถอยหลังตรงกลาง
                 progressTrack[i] = UIKit.Img($"ProgressTrack{i + 1}", zoomLayer, UIKit.Load("ui2/hold_ring"), new Vector2(190, 190), false);
@@ -182,27 +169,7 @@ namespace RTE
             big = UIKit.Label("Big", root, "", 220, Color.white);
             big.rectTransform.anchoredPosition = new Vector2(0, -250);
 
-            // อุโมงค์วาร์ป: จอมืดลง + วังวนแสงกลางจอ + เส้นแสงพุ่งออกจากศูนย์กลาง
-            warpDim = UIKit.Panel("WarpDim", root, Vector2.zero, Color.clear); UIKit.Stretch(warpDim.rectTransform);
-            for (int k = 0; k < TunnelRings; k++)
-            {
-                tunnel[k] = UIKit.Img("TunnelRing", root, UIKit.Load("fx_ring"), new Vector2(300, 300), false);
-                tunnel[k].color = Color.clear;
-            }
-            vortex2 = UIKit.Img("WarpVortex2", root, UIKit.Load("fx/tech_ring"), new Vector2(700, 700), false);
-            for (int k = 0; k < Streaks; k++)
-            {
-                streak[k] = UIKit.Panel("Streak", root, new Vector2(10, 4), Color.clear);
-                streak[k].rectTransform.pivot = new Vector2(0, .5f);
-                stAngle[k] = (k + Random.value * .8f) / Streaks * 360f;
-                stPhase[k] = Random.value;
-                stSpeed[k] = Random.Range(.7f, 1.4f);
-            }
-            warpCore = UIKit.Img("WarpCore", root, UIKit.Load("fx/flare"), new Vector2(700, 700), false);
-            vortex2.color = warpCore.color = Color.clear;
-            warpText = UIKit.Label("WarpText", root, "", 76, Color.white);
-            warpText.rectTransform.anchoredPosition = new Vector2(0, 330);
-            UIKit.Outline(warpText, new Color(0, .3f, .6f, .9f), 4);
+            launch = new LaunchSequence(root);
             flash = WarpFlash.Create(canvas);
             Hide();
         }
@@ -211,19 +178,19 @@ namespace RTE
         {
             root.gameObject.SetActive(true);
             GameSession.Clear();
-            phase = 0; countT = warpT = 0;
+            phase = 0; countT = zoomT = 0;
             zoomLayer.localScale = Vector3.one; zoomLayer.anchoredPosition = Vector2.zero; zoomLayer.localRotation = Quaternion.identity;
-            big.text = ""; warpText.text = "";
-            warpDim.color = vortex2.color = warpCore.color = Color.clear;
-            foreach (var r in tunnel) r.color = Color.clear;
-            foreach (var s in streak) s.color = Color.clear;
+            big.text = "";
             flash.Set(0);
+            launch.Reset();
+            title.text = "SELECT CHARACTER";
+            sub.text = "ยกแขนค้างไว้ 3 วินาที   ◀ แขนซ้าย = MALE   •   FEMALE = แขนขวา ▶";
             for (int i = 0; i < 2; i++)
             {
                 hold[i] = 0; holdSide[i] = -1; stages[i].Set(Hero.None); stages[i].SetActive(true);
                 stages[i].Image.rectTransform.localScale = Vector3.one; stages[i].Image.color = Color.white;
                 progress[i].fillAmount = 0; progressNum[i].text = ""; progressTrack[i].color = Color.clear;
-                beamUp[i].color = beamUpCore[i].color = Color.clear;
+                readyHold[i] = 0; ready[i] = false; ringFx[i].Boost = 0;
                 cardPickT[i] = 9;
             }
         }
@@ -237,7 +204,11 @@ namespace RTE
         public Result Tick(TrackedPlayer[] players, bool online, bool skip)
         {
             float dt = Time.deltaTime;
-            for (int i = 0; i < 2; i++) { stages[i].Tick(); PlaceModel(i); ringFx[i].Tick(hold[i] / HoldSeconds, GameSession.Heroes[i] != Hero.None); }
+            for (int i = 0; i < 2; i++)
+            {
+                stages[i].Tick(); PlaceModel(i);
+                ringFx[i].Tick(phase == 1 ? readyHold[i] / LaunchSequence.ReadyHold : hold[i] / HoldSeconds, GameSession.Heroes[i] != Hero.None);
+            }
 
             if (phase == 0)
             {
@@ -247,99 +218,67 @@ namespace RTE
                         if (GameSession.Heroes[i] == Hero.None) Pick(i, GameSession.Heroes[1 - i] == Hero.Male ? Hero.Female :
                                                                         GameSession.Heroes[1 - i] == Hero.Female ? Hero.Male : (Hero)i);
                 bool both = GameSession.Heroes[0] != Hero.None && GameSession.Heroes[1] != Hero.None;
-                centerStatus.text = both ? "พร้อมออกภารกิจ!" : "เลือกตัวละครของคุณ";
-                if (both) phase = 1;
+                centerStatus.text = both ? "เลือกครบแล้ว!" : "เลือกตัวละครของคุณ";
+                if (both) { phase = 1; countT = 0; }
             }
-            else if (phase == 1)                            // นับถอยหลัง 3-2-1 (เสาแสงชาร์จรอ)
+            else if (phase == 1)                            // READY CHECK: ชูแขน 2 ข้างค้าง 1 วิ ทั้งคู่
             {
                 countT += dt;
-                int n = Mathf.CeilToInt(CountSeconds - countT);
-                big.text = n > 0 ? n.ToString() : "";
-                big.rectTransform.localScale = Vector3.one * UIKit.EaseOutBack(Mathf.Clamp01((countT % 1f) / .3f));
-                centerStatus.text = $"เตรียมวาร์ปใน {Mathf.Max(n, 0)}";
-                float charge = countT / CountSeconds;
                 for (int i = 0; i < 2; i++)
                 {
-                    beamUp[i].color = WithA(PColor(i), .15f + .25f * charge + .08f * Mathf.Sin(Time.time * 12));
-                    beamUp[i].rectTransform.localScale = new Vector3(.35f + .25f * charge, 1, 1);
+                    if (ready[i]) continue;
+                    bool up = ArmRaise.BothUp(players[i], i, online);
+                    readyHold[i] = up ? readyHold[i] + dt : Mathf.Max(0, readyHold[i] - dt * 2);
+                    progress[i].fillAmount = readyHold[i] / LaunchSequence.ReadyHold;
+                    progressTrack[i].color = new Color(1, 1, 1, .2f);
+                    progressNum[i].text = "";
+                    pLabel[i].text = $"P{i + 1}: ชูแขน 2 ข้าง!";
+                    if (readyHold[i] >= LaunchSequence.ReadyHold)
+                    {
+                        ready[i] = true; ringFx[i].Burst(); progress[i].fillAmount = 0; progressTrack[i].color = Color.clear;
+                        pLabel[i].text = $"P{i + 1}  พร้อม! ✓";
+                    }
                 }
-                if (countT >= CountSeconds) { phase = 2; big.text = ""; }
+                launch.ReadyCheck(countT, ready);
+                centerStatus.text = "READY CHECK";
+                title.text = "READY CHECK";
+                sub.text = "ชูแขนทั้ง 2 ข้างค้างไว้ 1 วินาที  เพื่อยืนยันว่าพร้อมออกภารกิจ";
+                if ((ready[0] && ready[1]) || countT >= LaunchSequence.AutoSeconds || skip)
+                {
+                    phase = 2; zoomT = 0;
+                    for (int i = 0; i < 2; i++) { ringFx[i].Burst(); progress[i].fillAmount = 0; progressTrack[i].color = Color.clear; }
+                }
             }
-            else if (Warp(dt)) return Result.Done;
+            else                                            // ออกภารกิจ: teleport -> warp + การ์ดภารกิจ -> แฟลช
+            {
+                zoomT += dt;
+                // TELEPORT: เสาแสงแรงขึ้น ตัวละครยืดเป็นลำแสงแล้วลอยหายขึ้นไป
+                float tp = Mathf.Clamp01(zoomT / LaunchSequence.TeleportSeconds);
+                for (int i = 0; i < 2; i++)
+                {
+                    ringFx[i].Boost = Mathf.SmoothStep(0, 1, Mathf.Clamp01(zoomT / .5f));
+                    float squeeze = Mathf.SmoothStep(0, 1, Mathf.InverseLerp(.35f, 1f, tp));
+                    var img = stages[i].Image;
+                    img.rectTransform.localScale = new Vector3(Mathf.Lerp(1, .05f, squeeze), Mathf.Lerp(1, 1.6f, squeeze), 1);
+                    img.rectTransform.anchoredPosition += new Vector2(0, squeeze * squeeze * 500);
+                    img.color = new Color(1, 1, 1, 1 - Mathf.InverseLerp(.75f, 1f, tp));
+                    pLabel[i].text = "";
+                }
+                centerStatus.text = "";
+                // พื้นหลังซูมเข้าเล็กน้อยระหว่างวาร์ป
+                float wt = Mathf.Clamp01((zoomT - LaunchSequence.TeleportSeconds) / LaunchSequence.WarpSeconds);
+                zoomLayer.localScale = Vector3.one * (1 + .5f * wt * wt);
+                if (launch.Launch(zoomT, GameSession.Heroes))
+                {
+                    zoomLayer.localScale = Vector3.one;
+                    flash.Play();                           // ขาวเต็มจอ แล้วจางเผยฉากเกมเอง (ไม่ตัดฉากกระทันหัน)
+                    return Result.Done;
+                }
+            }
 
             UpdateCards();
             UpdateLinks();
             return Result.Selecting;
-        }
-
-        // วาร์ปเข้าเกม: 1) เสาแสงดูดตัวละครขึ้น 2) อุโมงค์แสงความเร็วสูง 3) แสงขาววาบ -> คืน true เมื่อจบ
-        bool Warp(float dt)
-        {
-            if (warpT == 0) for (int i = 0; i < 2; i++) ringFx[i].Burst();   // แสงวาบที่วงตอนเริ่มวาร์ป
-            warpT += dt;
-            float t = warpT, now = Time.time;
-
-            // 1) เสาแสงพุ่งขึ้นจากวง ตัวละครถูกบีบเป็นเส้นแสงแล้วหายขึ้นไป
-            float rise = Smooth(t / .35f), suck = Smooth((t - .25f) / .5f), fadeBeam = Smooth((t - .9f) / .5f);
-            for (int i = 0; i < 2; i++)
-            {
-                beamUp[i].color = WithA(Color.Lerp(PColor(i), Color.white, .35f), (.4f + .6f * rise) * (1 - fadeBeam));
-                beamUp[i].rectTransform.localScale = new Vector3(Mathf.Lerp(.6f, 1.3f, rise) * (1 - .9f * fadeBeam), 1, 1);
-                beamUpCore[i].color = WithA(Color.white, rise * (1 - fadeBeam) * (.75f + .25f * Mathf.Sin(now * 30)));
-                beamUpCore[i].rectTransform.localScale = new Vector3(Mathf.Lerp(.2f, 1f, rise) * (1 - fadeBeam), 1, 1);
-                var m = stages[i].Image;
-                m.rectTransform.localScale = new Vector3(Mathf.Lerp(1, .04f, suck), Mathf.Lerp(1, 1.35f, suck), 1);
-                m.color = new Color(1, 1, 1, 1 - Smooth((t - .45f) / .3f));
-            }
-
-            // ข้อความ
-            float txt = Smooth((t - .15f) / .3f) * (1 - Smooth((t - 1.4f) / .3f));
-            warpText.text = txt > 0 ? "WARP  ▶  วาร์ปเข้าสู่ภารกิจ!" : "";
-            warpText.color = WithA(Color.white, txt);
-            warpText.rectTransform.localScale = new Vector3(1 + .25f * (1 - txt) + .02f * Mathf.Sin(now * 25), 1, 1);
-            centerStatus.text = "";
-
-            // 2) อุโมงค์แสง: จอมืดลง วังวนหมุนเร็วขึ้นเรื่อย ๆ เส้นแสงพุ่งออกจากกลางจอ ฉากสั่นเล็กน้อย
-            float hs = Smooth((t - .45f) / 1.4f);
-            warpDim.color = new Color(0, .02f, .06f, Smooth((t - .4f) / .6f) * .8f);
-            float ringOn = Smooth((t - .45f) / .3f);
-            for (int k = 0; k < TunnelRings; k++)   // วงแหวนเกิดเล็กกลางจอ ขยายเร่งขึ้นจนเลยขอบจอ = พุ่งไปข้างหน้า
-            {
-                float q = ((float)k / TunnelRings + Mathf.Max(0, t - .45f) * (.5f + 1.8f * hs)) % 1f;
-                tunnel[k].rectTransform.localScale = new Vector3(1.6f, 1f, 1) * Mathf.Lerp(.1f, 9f, q * q * q);
-                Color rc = Color.Lerp(k % 2 == 0 ? PColor(0) : PColor(1), Color.white, .25f);
-                tunnel[k].color = WithA(rc, ringOn * Mathf.Clamp01(q * 5) * (1 - q) * 1.4f);
-            }
-            vortex2.color = WithA(Color.Lerp(PColor(0), PColor(1), .5f + .5f * Mathf.Sin(now * 6)), Smooth((t - .6f) / .4f) * .45f * (1 - hs));
-            vortex2.rectTransform.localScale = Vector3.one * Mathf.Lerp(.3f, 3.5f, hs);
-            vortex2.rectTransform.localRotation = Quaternion.Euler(0, 0, t * t * 180f);
-            zoomLayer.localScale = Vector3.one * (1 + .1f * hs);
-            zoomLayer.anchoredPosition = Random.insideUnitCircle * 10f * hs;
-            float on = Smooth((t - .45f) / .25f);
-            for (int k = 0; k < Streaks; k++)
-            {
-                float q = (stPhase[k] + Mathf.Max(0, t - .45f) * stSpeed[k] * (.6f + 2.4f * hs)) % 1f;
-                float ang = stAngle[k] * Mathf.Deg2Rad;
-                var dir = new Vector2(Mathf.Cos(ang), Mathf.Sin(ang) * .62f);       // จอกว้าง: วงรีตามสัดส่วนจอ
-                var rt = streak[k].rectTransform;
-                rt.anchoredPosition = dir * Mathf.Lerp(40, 1250, q * q);
-                rt.localRotation = Quaternion.Euler(0, 0, Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg);
-                rt.sizeDelta = new Vector2(30 + 700 * hs * q, 2 + 5 * q);
-                Color c = k % 3 == 0 ? Color.white : PColor(k % 3 - 1);
-                streak[k].color = WithA(Color.Lerp(c, Color.white, .4f), on * Mathf.Clamp01(q * 6) * (.5f + .5f * hs));
-            }
-
-            // 3) แสงขาววาบจากกลางจอจนเต็มจอ
-            float fl = Smooth((t - 1.6f) / (WarpSeconds - 1.6f));
-            warpCore.color = WithA(Color.white, Smooth((t - 1.1f) / .5f));
-            warpCore.rectTransform.localScale = Vector3.one * Mathf.Lerp(.2f, 5f, fl * fl + .15f * hs);
-            warpCore.rectTransform.localRotation = Quaternion.Euler(0, 0, t * 90f);
-            flash.Set(fl * fl);
-
-            if (t < WarpSeconds) return false;
-            zoomLayer.localScale = Vector3.one; zoomLayer.anchoredPosition = Vector2.zero;
-            flash.Play();                       // ขาวเต็มจอ แล้วจางเผยฉากเกมเอง
-            return true;
         }
 
         void UpdatePlayer(int i, TrackedPlayer p, bool online)
