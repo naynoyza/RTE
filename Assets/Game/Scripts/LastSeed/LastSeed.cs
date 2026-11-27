@@ -73,7 +73,12 @@ namespace RTE
             BuildUI();
         }
 
-        void Start() => GoPractice();
+        void Start()
+        {
+            GoPractice();
+            // มาจากแอนิเมชันวาร์ปของเกม 1 (จอขาวเต็ม) -> จางจากขาวเผยฉากเกม 2 ให้ต่อเนื่อง
+            if (GameSession.FromWarp) { GameSession.FromWarp = false; WarpFlash.Create(canvasGo.transform).Play(); }
+        }
 
         // ใช้ทดสอบจาก Editor: ดูสถานะ / ไปหน้าสอน / เปิดบอตเล่นเอง
         public string StateName => state.ToString();

@@ -25,6 +25,9 @@ namespace RTE
         readonly Text[] hint = new Text[2], hintEn = new Text[2];
         readonly Image waterReady, sunReady, syncImg, waterLow, sunLow;
         readonly RectTransform balanceBar;
+        const float BalanceW = 480f;        // ความกว้างรูปแถบสมดุลบนจอ (สูง = กว้าง x .33 ตามสัดส่วนรูป)
+        const float KnobTravel = .36f;      // ปุ่มเลื่อนได้ ± ความกว้าง x ค่านี้ (รางในรูปอยู่ราว 11.5%–88.5% ของความกว้าง)
+        const float TrackDropY = .02f;      // กลางรางอยู่ต่ำกว่ากลางรูปเล็กน้อย (สัดส่วนของความสูง)
         readonly SkeletonView[] skeleton = new SkeletonView[2];
         float popupTime = 99, knobX;
 
@@ -44,28 +47,24 @@ namespace RTE
 
             var tree = SeedKit.Box("hud_tree");
             stage = UIKit.Label("Stage", rt, "", 30, Color.white);
-            UIKit.Anchor(stage.rectTransform, new Vector2(.5f, 1), new Vector2(30, -(tree.yMax + 2)));
+            UIKit.Anchor(stage.rectTransform, new Vector2(.5f, 1), new Vector2(30, -(tree.yMax - 20)));
             percent = UIKit.Label("Percent", treeFill.transform, "", 34, Color.white);
             UIKit.Stretch(percent.rectTransform);
 
             // ---------------- Nature Balance: น้ำ (ซ้าย) <—•—> แสง (ขวา), ช่องกลางสีเขียว = สมดุล
-            balanceBar = UIKit.Panel("Balance", rt, new Vector2(420, 22), new Color(0, 0, 0, .55f)).rectTransform;
-            UIKit.Anchor(balanceBar, new Vector2(.5f, 1), new Vector2(30, -(tree.yMax + 82)));
-            var left = UIKit.Panel("WaterSide", balanceBar, new Vector2(170, 14), new Color(SeedSettings.Water.r, SeedSettings.Water.g, SeedSettings.Water.b, .8f));
-            left.rectTransform.anchoredPosition = new Vector2(-118, 0);
-            var right = UIKit.Panel("SunSide", balanceBar, new Vector2(170, 14), new Color(SeedSettings.Sun.r, SeedSettings.Sun.g, SeedSettings.Sun.b, .8f));
-            right.rectTransform.anchoredPosition = new Vector2(118, 0);
-            UIKit.Panel("Center", balanceBar, new Vector2(70, 18), new Color(.35f, 1f, .4f, .9f));
-            balanceKnob = UIKit.Img("Knob", balanceBar, UIKit.Load("fx_circle"), new Vector2(34, 34));
+            // รูปแถบ ui2/balance_bar (กรอบไม้พันเถาวัลย์: น้ำ | ต้นอ่อนตรงกลาง | แสงแดด) + ปุ่มคริสตัลต้นอ่อน ui2/balance_knob
+            balanceBar = UIKit.Img("Balance", rt, UIKit.Load("ui2/balance_bar"), new Vector2(BalanceW, BalanceW * .33f), false).rectTransform;
+            UIKit.Anchor(balanceBar, new Vector2(.5f, 1), new Vector2(30, -(tree.yMax + 8)));
+            balanceKnob = UIKit.Img("Knob", balanceBar, UIKit.Load("ui2/balance_knob"), new Vector2(54, 54), false);
             balanceKnob.color = Color.white;
-            UIKit.Label("Title", balanceBar, "NATURE BALANCE", 20, new Color(1, 1, 1, .8f)).rectTransform.anchoredPosition = new Vector2(0, 26);
+            UIKit.Label("Title", balanceBar, "NATURE BALANCE", 20, new Color(1, 1, 1, .85f)).rectTransform.anchoredPosition = new Vector2(0, 44);
             balanceText = UIKit.Label("BalanceText", balanceBar, "", 26, Color.white);
-            balanceText.rectTransform.anchoredPosition = new Vector2(0, -30);
+            balanceText.rectTransform.anchoredPosition = new Vector2(0, -50);
             // ไอคอนบอกฝั่งที่ขาด: น้ำน้อย (ซ้าย) / แสงน้อย (ขวา)
             waterLow = UIKit.Img("WaterLow", balanceBar, UIKit.Load("ui2/water_low"), new Vector2(54, 58));
-            waterLow.rectTransform.anchoredPosition = new Vector2(-250, 0);
+            waterLow.rectTransform.anchoredPosition = new Vector2(-BalanceW * .5f - 34, 0);
             sunLow = UIKit.Img("SunLow", balanceBar, UIKit.Load("ui2/sun_low"), new Vector2(60, 55));
-            sunLow.rectTransform.anchoredPosition = new Vector2(250, 0);
+            sunLow.rectTransform.anchoredPosition = new Vector2(BalanceW * .5f + 34, 0);
 
             var timerBox = UIKit.Img("TimerBox", rt, UIKit.Load("ui2/seed_timer"), new Vector2(230, 84));
             UIKit.Anchor(timerBox.rectTransform, new Vector2(.5f, 1), new Vector2(360, -(tree.yMax + 76)));
@@ -73,10 +72,10 @@ namespace RTE
             timer.rectTransform.anchoredPosition = new Vector2(30, 0);
 
             sync = UIKit.Label("Sync", rt, "", 40, Color.white);
-            UIKit.Anchor(sync.rectTransform, new Vector2(.5f, 1), new Vector2(30, -(tree.yMax + 165)));   // ใต้ข้อความสมดุล ไม่ทับกัน
+            UIKit.Anchor(sync.rectTransform, new Vector2(.5f, 1), new Vector2(30, -(tree.yMax + 143)));   // ใต้ข้อความสมดุล ไม่ทับกัน
             // ป้ายรูป TOGETHER! / WAIT FOR YOUR PARTNER แทนข้อความส่งพร้อมกัน
             syncImg = UIKit.Img("SyncBanner", rt, UIKit.Load("ui2/sync_together"), new Vector2(380, 116));
-            UIKit.Anchor(syncImg.rectTransform, new Vector2(.5f, 1), new Vector2(30, -(tree.yMax + 175)));
+            UIKit.Anchor(syncImg.rectTransform, new Vector2(.5f, 1), new Vector2(30, -(tree.yMax + 153)));
             stallHint = BuildStallHint(rt);
             popup = UIKit.Label("Popup", rt, "", 96, new Color(1f, .95f, .4f));
             UIKit.Anchor(popup.rectTransform, new Vector2(.5f, .5f), new Vector2(0, 40));
@@ -183,9 +182,10 @@ namespace RTE
         /// lean: -1 = น้ำมากไป, +1 = แสงมากไป, ratio = น้อย/มาก, multiplier = ผลต่อการโต
         public void SetBalance(float lean, float ratio, float multiplier, bool balanced, float dt)
         {
-            knobX = SeedKit.Damp(knobX, Mathf.Clamp(lean, -1, 1) * 190, 6, dt);
-            balanceKnob.rectTransform.anchoredPosition = new Vector2(knobX, 0);
-            balanceKnob.color = balanced ? new Color(.5f, 1f, .5f) : new Color(1f, .6f, .4f);
+            knobX = SeedKit.Damp(knobX, Mathf.Clamp(lean, -1, 1) * BalanceW * KnobTravel, 6, dt);
+            balanceKnob.rectTransform.anchoredPosition = new Vector2(knobX, -BalanceW * .33f * TrackDropY);
+            balanceKnob.color = balanced ? Color.white : new Color(1f, .78f, .6f);   // ไม่สมดุล = อมส้มเล็กน้อย
+            balanceKnob.rectTransform.localScale = Vector3.one * (balanced ? 1 + .06f * Mathf.Sin(Time.time * 6) : 1);
             balanceText.text = balanced ? "สมดุล  ต้นไม้โตเร็วขึ้น!" : lean < 0 ? "แสงน้อยไป  ต้นไม้โตช้าลง" : "น้ำน้อยไป  ต้นไม้โตช้าลง";
             balanceText.color = balanced ? new Color(.6f, 1f, .6f) : new Color(1f, .7f, .5f);
             float pulse = 1 + .1f * Mathf.Sin(Time.time * 8);

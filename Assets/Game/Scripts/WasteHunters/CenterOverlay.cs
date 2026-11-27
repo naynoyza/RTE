@@ -28,6 +28,7 @@ namespace RTE
         readonly Image banner, gauge, starsBg;
         readonly Image[] stars = new Image[3];
         readonly Text bannerLabel, gaugeText, centerTitle;
+        readonly Image centerLabel;
         readonly Text[] cardTitle = new Text[2], cardBody = new Text[2];
 
         static readonly Vector2 FrameSize = new Vector2(1400, 692);
@@ -65,6 +66,9 @@ namespace RTE
             centerTitle = UIKit.Label("CenterTitle", result, "", 34, Color.white);
             centerTitle.rectTransform.anchoredPosition = new Vector2(0, -182);
             centerTitle.rectTransform.sizeDelta = new Vector2(900, 50);
+            // ป้ายรูปแทนข้อความใต้เกจ (ภารกิจ 1: ui2/cleaner_air_label "CLEANER AIR")
+            centerLabel = UIKit.Img("CenterLabel", result, null, new Vector2(400, 80), false);
+            centerLabel.rectTransform.anchoredPosition = new Vector2(0, -190);
 
             banner = UIKit.Img("Banner", result, UIKit.Load("ui2/winner_banner"), new Vector2(660, 222));
             banner.rectTransform.anchoredPosition = new Vector2(0, 330);   // ทับป้าย RESULT ของกรอบ
@@ -140,7 +144,18 @@ namespace RTE
             cardTitle[0].text = left.Title; cardBody[0].text = left.Body;
             cardTitle[1].text = right.Title; cardBody[1].text = right.Body;
             gauge.sprite = UIKit.Load(gaugeSprite);
-            gaugeText.text = gaugeValue; centerTitle.text = gaugeTitle;
+            gaugeText.text = gaugeValue;
+            // gaugeTitle ขึ้นต้นด้วย "ui2/" = ใช้ป้ายรูปแทนข้อความ (ยังไม่มีรูป -> ใช้ข้อความอังกฤษสำรอง)
+            bool asImage = gaugeTitle != null && gaugeTitle.StartsWith("ui2/");
+            var labelSprite = asImage ? Resources.Load<Sprite>("Sprites/" + gaugeTitle) : null;
+            centerLabel.enabled = labelSprite != null;
+            if (labelSprite != null)
+            {
+                centerLabel.sprite = labelSprite;
+                var ls = labelSprite.rect.size;
+                centerLabel.rectTransform.sizeDelta = new Vector2(80 * ls.x / ls.y, 80);
+            }
+            centerTitle.text = !asImage ? gaugeTitle : labelSprite == null ? "CLEANER AIR" : "";
             for (int i = 0; i < 3; i++) stars[i].enabled = i < starCount;
         }
 
@@ -152,13 +167,14 @@ namespace RTE
         {
             int collected = p1.ImpactCollected + p2.ImpactCollected;
             int spawned = Mathf.Max(1, p1.ImpactSpawned + p2.ImpactSpawned);
-            float air = (float)collected / spawned;
+            // อากาศสะอาดขึ้นทั้งทีม: ขยะที่เก็บได้ + โบนัสทุกครั้งที่ส่งอากาศให้เพื่อนสำเร็จ (+2% ต่อครั้ง)
+            float air = Mathf.Clamp01((float)collected / spawned + (p1.AirSent + p2.AirSent) * .02f);
             bool tie = p1.Score == p2.Score;
-            string winner = tie ? "เสมอ!" : p1.Score > p2.Score ? "P1" : "P2";
+            string winner = tie ? "เสมอ!" : p1.Score > p2.Score ? "PLAYER 1" : "PLAYER 2";
             ShowCards(tie ? null : "ui2/winner_banner", winner,
-                      new Card { Title = "P1", Body = $"{p1.Score} คะแนน\nรีไซเคิล {p1.Recycled} ชิ้น" },
-                      new Card { Title = "P2", Body = $"{p2.Score} คะแนน\nรีไซเคิล {p2.Recycled} ชิ้น" },
-                      "ui2/air_gauge", $"{air * 100:0}%", "อากาศสะอาดขึ้น (ทั้งทีม)", Stars(air));
+                      new Card { Title = "PLAYER 1", Body = $"{p1.Score} คะแนน\nรีไซเคิล {p1.Recycled} ชิ้น\nส่งอากาศ {p1.AirSent} ครั้ง" },
+                      new Card { Title = "PLAYER 2", Body = $"{p2.Score} คะแนน\nรีไซเคิล {p2.Recycled} ชิ้น\nส่งอากาศ {p2.AirSent} ครั้ง" },
+                      "ui2/air_gauge", $"{air * 100:0}%", "ui2/cleaner_air_label", Stars(air));
             if (!tie) bannerLabel.color = GameSettings.PlayerColors[p1.Score > p2.Score ? 0 : 1];
             else bannerLabel.color = Color.white;
         }

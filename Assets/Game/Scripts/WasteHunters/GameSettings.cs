@@ -28,6 +28,23 @@ namespace RTE
         public float FeverSeconds = 6f;     // FEVER นานกี่วินาที
         public float DustAt = 40f;          // DUST STORM เริ่มที่วินาทีนี้
 
+        [Header("อากาศ (AIR)")]
+        public float AirDrainPerSecond = 1.6f; // อากาศลดเอง %/วิ (100% หมดใน ~62 วิ)
+        public float DustDrainScale = 1.5f;    // ช่วง DUST STORM ลดเร็วขึ้นกี่เท่า
+        public float AirBubbleGain = 30f;      // ลูกอากาศธรรมดา +%
+        public float LeafBubbleGain = 50f;     // ลูกใบไม้ (โบนัส) +%
+        [Range(0, 1)] public float LeafChance = .15f;
+        public float AirSpawnMin = 6f, AirSpawnMax = 8f;        // ลูกอากาศตกลงถนนทุกกี่วินาที (มาก = ท้าทาย)
+        public float AirLowSpawnBelow = 30f;                     // อากาศต่ำกว่านี้ = ลูกออกถี่ขึ้น
+        public float AirLowSpawnMin = 4f, AirLowSpawnMax = 5f;
+        public float AirWarnBelow = 25f;       // ต่ำกว่านี้ = หลอดแดง + ขอบจอแดง + เสียงเตือน
+        public float GiftLife = 4f;            // ลูกที่เพื่อนส่งมา ต้องรับภายในกี่วินาที
+        public float AirGrabSeconds = .35f;    // เล็งค้างบนลูกกี่วินาที = เก็บ (ปัดผ่านเร็ว ๆ = ส่ง)
+        public float SwipeSpeedPx = 1800f;     // ความเร็วมือแนวนอน (พิกเซล/วิ) ที่นับว่า "ปัด"
+        public int TeamBonus = 15;             // ผู้ส่งได้คะแนนเมื่อเพื่อนรับอากาศได้
+        [Range(.1f, 1f)] public float NoAirAimScale = .5f;    // อากาศหมด: วงดูดเหลือกี่เท่า
+        [Range(.1f, 1f)] public float NoAirSpeedScale = .5f;  // อากาศหมด: เดินเร็วได้กี่เท่า
+
         [Header("หน้าจุดยืน")]
         public float StandbyHold = 2f;      // ผู้เล่นครบ 2 คนต้องยืนค้างกี่วินาทีจึงเริ่ม
         public float StandbyEmpty = 8f;     // ไม่มีใครเลยกี่วินาทีจึงกลับหน้าปก

@@ -23,7 +23,7 @@ namespace RTE
     {
         public GameSettings Settings = new GameSettings();
 
-        enum State { Cover, Select, Practice, Countdown, Play, Result }
+        enum State { Cover, Select, CutsceneStart, Mission1, Practice, Countdown, Play, Result, CutsceneEnd, ToGame2 }
         State state;
 
         PlayerLane[] lanes;
@@ -35,6 +35,9 @@ namespace RTE
         PracticeOverlay practice;
         WasteEvents events;
         PresenceGuard guard;
+        Cutscene cutsceneStart, cutsceneEnd;   // หลังเลือกตัวละคร / หลังเกม 1 (StreamingAssets/cutscene_*.mp4)
+        MissionTransition toGame1, toGame2;    // การ์ด MISSION 01 ก่อนเกม 1 / MISSION 02 ก่อนเกม 2
+        WarpFlash fadeIn;                      // จางจากขาวเข้าหน้าสอนเล่นหลัง cutscene
         Text debugText;
         float timeLeft;
         bool showDebug;
@@ -70,6 +73,8 @@ namespace RTE
                 case "danger": foreach (var l in lanes) l.SpawnDanger(); break;
                 case "overdrive": foreach (var l in lanes) l.StartOverdrive(); break;
                 case "play": StopAllCoroutines(); StartCoroutine(CountdownThenPlay()); break;
+                case "noair": lanes[1].Air = 0; break;                                    // ทดสอบ: P2 อากาศหมด (อ่อนแรง)
+                case "endsoon": timeLeft = Mathf.Min(timeLeft, 3f); break;                 // ทดสอบ: จบรอบใน 3 วิ -> หน้าสรุปผล
             }
         }
 
@@ -86,6 +91,7 @@ namespace RTE
 
             var hud = UIKit.Rect("HUD", canvas); UIKit.Stretch(hud);
             lanes = new[] { new PlayerLane(Settings, canvas, hud, 1), new PlayerLane(Settings, canvas, hud, 2) };
+            lanes[0].Partner = lanes[1]; lanes[1].Partner = lanes[0];   // ปัดส่งลูกอากาศข้ามฝั่ง
             UIKit.Img("Divider", canvas, null, new Vector2(6, 1080), false).color = new Color(.1f, .1f, .1f);
             hud.SetAsLastSibling();                                                        // HUD อยู่เหนือจอผู้เล่นและเส้นแบ่ง
             timer = new RoundTimer(hud);
@@ -96,6 +102,14 @@ namespace RTE
             practice = new PracticeOverlay(canvas);
             select = new CharacterSelect(canvas);
             cover = new IntroCover(canvas, gameObject);
+
+            cutsceneStart = new Cutscene(canvas, "cutscene_start.mp4", "START GAME", "ภารกิจกอบกู้โลกเริ่มต้นขึ้นแล้ว");
+            cutsceneEnd = new Cutscene(canvas, "cutscene_game1_end.mp4", "MISSION 01 CLEAR", "อากาศของเมืองกลับมาสะอาดแล้ว");
+            toGame1 = new MissionTransition(canvas, "MISSION 01", "WASTE HUNTERS", "เก็บขยะอิเล็กทรอนิกส์  •  กู้อากาศให้เมือง",
+                MissionTransition.Cyan, MissionTransition.Yellow, MissionTransition.Pink);
+            toGame2 = new MissionTransition(canvas, "MISSION 02", "THE LAST SEED", "ร่วมกันส่งพลังปลูกต้นไม้ให้โลก",
+                MissionTransition.Green, MissionTransition.Green, MissionTransition.Cyan);
+            fadeIn = WarpFlash.Create(canvas);
 
             guard = new PresenceGuard(canvas);
             debugText = UIKit.Label("Debug", canvas, "", 22, Color.yellow, TextAnchor.LowerCenter);
@@ -110,6 +124,7 @@ namespace RTE
             state = State.Cover;
             GameSession.Active = false; GameSession.Clear(); guard.Hide();
             select.Hide(); practice.Hide(); hudRoot.SetActive(false); overlay.Hide();
+            cutsceneStart.Hide(); cutsceneEnd.Hide(); toGame1.Hide(); toGame2.Hide();
             foreach (var lane in lanes) lane.Practice = false;
             foreach (var lane in lanes) lane.Reset();
             cover.Show();
@@ -122,9 +137,19 @@ namespace RTE
             GameSession.Active = true; guard.Reset();
         }
 
+        // Cutscene Start Game: หลังการ์ด START (วาร์ปจบ) -> เล่นวิดีโอ -> หน้าสอนเล่นเกม 1
+        void GoCutsceneStart()
+        {
+            state = State.CutsceneStart;
+            select.Hide();
+            cutsceneStart.Play();
+        }
+
         // สอนเล่นซ้อนบนฉากเกมจริง: ผู้เล่นเดิน/เล็ง/ดูดได้จริง แต่ขยะเป็นของซ้อม
         void GoPractice()
         {
+            cutsceneStart.Hide(); toGame1.Hide();
+            if (state == State.Mission1) fadeIn.Play();   // การ์ดภารกิจจบที่จอขาว -> จางเผยหน้าสอนเล่น
             state = State.Practice;
             Bgm.Play("bgm_game1", .8f);
             cover.Hide(); select.Hide(); hudRoot.SetActive(true);
@@ -151,8 +176,19 @@ namespace RTE
             overlay.ShowResult(lanes[0], lanes[1]);
             Sfx.Play("result");
             yield return new WaitForSeconds(Settings.ResultSeconds);
-            if (GameSession.Active) UnityEngine.SceneManagement.SceneManager.LoadScene(GameSession.Game2Scene);   // ไปเกม 2
-            else GoCover();
+            if (!GameSession.Active) { GoCover(); yield break; }
+            // ไปเกม 2: cutscene หลังเกม 1 -> แอนิเมชันวาร์ป MISSION 02 -> ขาวเต็มจอ -> โหลดฉาก (เกม 2 จางจากขาวเอง)
+            state = State.CutsceneEnd;
+            Bgm.Stop();
+            cutsceneEnd.Play();
+            while (!cutsceneEnd.Tick(Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame)) yield return null;
+            state = State.ToGame2;
+            overlay.Hide();
+            toGame2.Play();
+            cutsceneEnd.Hide();
+            while (!toGame2.Tick()) yield return null;
+            GameSession.FromWarp = true;
+            UnityEngine.SceneManagement.SceneManager.LoadScene(GameSession.Game2Scene);
         }
 
         // ================================================================== ทุกเฟรม
@@ -178,7 +214,15 @@ namespace RTE
                     break;
 
                 case State.Select:     // ยกแขนเลือกตัวละคร -> นับ 3 วิ -> ซูม cinematic
-                    if (select.Tick(players, online, skip) == CharacterSelect.Result.Done) GoPractice();
+                    if (select.Tick(players, online, skip) == CharacterSelect.Result.Done) GoCutsceneStart();
+                    break;
+
+                case State.CutsceneStart:   // วิดีโอ Start Game (Space = ข้าม)
+                    if (cutsceneStart.Tick(skip)) { state = State.Mission1; toGame1.Play(); }
+                    break;
+
+                case State.Mission1:        // การ์ด MISSION 01 + เส้นแสงวาร์ป -> ขาวเต็มจอ -> หน้าสอนเล่นเกม 1
+                    if (toGame1.Tick()) GoPractice();
                     break;
 
                 case State.Practice:   // สอนเล่นซ้อนบนฉากจริง (READY ทั้งคู่ หรือครบ 15 วิ)

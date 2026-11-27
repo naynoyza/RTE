@@ -24,6 +24,8 @@ namespace RTE
         public float Speed { get; private set; }
         public float Boost { get; private set; }
         public float Walked { get; private set; }
+        /// <summary>ตัวคูณความเร็ว (อากาศหมด = เดินช้าลง)</summary>
+        public float SpeedScale = 1f;
         public float Bob => Mathf.Sin(phase * Mathf.PI) * 18f * Mathf.Clamp01(Speed / 2f);   // พิกเซล
 
         public WalkController(GameSettings settings, int slot) { this.settings = settings; this.slot = slot; }
@@ -36,7 +38,7 @@ namespace RTE
             CountSteps(p, cameraOnline);
             float stepRate = stepTimes.Count / 2f;
             Boost = Mathf.Clamp01(stepRate / settings.FullStepRate);
-            float target = moving ? settings.BaseSpeed + (settings.MaxSpeed - settings.BaseSpeed) * Boost : 0;
+            float target = moving ? (settings.BaseSpeed + (settings.MaxSpeed - settings.BaseSpeed) * Boost) * SpeedScale : 0;
             Speed = Mathf.Lerp(Speed, target, dt * (target > Speed ? 3f : 2f));
             float meters = Speed * dt;
             Walked += meters;

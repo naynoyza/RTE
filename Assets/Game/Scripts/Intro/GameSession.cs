@@ -9,6 +9,7 @@ namespace RTE
     {
         public static readonly Hero[] Heroes = { Hero.None, Hero.None };   // [0] = P1, [1] = P2
         public static bool Active;   // true = กำลังเล่นชุดภารกิจ (เริ่มที่หน้าเลือกตัวละคร จบหลังเกม 2)
+        public static bool FromWarp; // true = เพิ่งมาจาก Game2Transition (จอขาวเต็ม) -> ฉากเกม 2 จางจากขาวเอง
 
         public const int CoverScene = 0;               // WasteHunters.unity (หน้าปก + เกม 1)
         public const string Game2Scene = "The Last Seed";

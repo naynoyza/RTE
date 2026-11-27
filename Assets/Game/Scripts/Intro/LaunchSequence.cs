@@ -4,7 +4,7 @@
 //   1) READY CHECK (ผู้เล่นทำเอง) : ชูแขนทั้งสองข้างค้าง 1 วิ = "พร้อม!" วงจุดยืนเต็ม + แสงวาบ
 //                                    พร้อมครบ 2 คน -> ไปต่อทันที  (ไม่มีใครทำ = ออกเองใน AutoSeconds)
 //   2) TELEPORT                      : เสาแสงพุ่งแรง ตัวละครยืดเป็นลำแสงแล้วถูกดูดขึ้นไป
-//   3) WARP + MISSION BRIEF          : เส้นความเร็วพุ่งเข้าหากล้อง, การ์ด MISSION 01 + การ์ดตัวละครของ P1/P2 สไลด์เข้า
+//   3) WARP + START                  : เส้นความเร็วพุ่งเข้าหากล้อง, การ์ด START + การ์ดตัวละครของ P1/P2 สไลด์เข้า
 //   4) FLASH                          : แสงขาววาบ -> Done (เข้าหน้าสอนเล่นเกม 1)
 // คลาสนี้ดูแลเฉพาะชั้น UI ด้านบน (เส้นความเร็ว, การ์ดภารกิจ, แฟลช) — ตัวละคร/เสาแสงอยู่ใน CharacterSelect
 // =====================================================================================================
@@ -57,19 +57,19 @@ namespace RTE
             UIKit.Panel("Plate", card, new Vector2(994, 284), new Color(.03f, .07f, .12f, .96f));
             for (int k = 0; k < 2; k++)                                        // แถบเหลือง-ดำบน/ล่าง
                 UIKit.Panel("Stripe", card, new Vector2(900, 10), new Color(1f, .8f, .1f)).rectTransform.anchoredPosition = new Vector2(0, k == 0 ? 128 : -128);
-            UIKit.Label("Mission", card, "MISSION 01", 40, new Color(1f, .82f, .2f)).rectTransform.anchoredPosition = new Vector2(0, 82);
-            UIKit.Label("Name", card, "WASTE HUNTERS", 96, Color.white).rectTransform.anchoredPosition = new Vector2(0, 8);
-            UIKit.Label("Goal", card, "เก็บขยะอิเล็กทรอนิกส์  •  กู้อากาศให้เมือง", 34, new Color(.7f, 1f, .75f)).rectTransform.anchoredPosition = new Vector2(0, -72);
+            var start = UIKit.Label("Start", card, "START", 190, Color.white);     // คำว่า START ตัวใหญ่สีขาวเต็มกรอบ
+            start.rectTransform.sizeDelta = new Vector2(980, 260);
+            start.rectTransform.anchoredPosition = new Vector2(0, -4);
 
             // การ์ดตัวละครของผู้เล่น (สไลด์เข้าจากข้าง)
             for (int i = 0; i < 2; i++)
             {
                 heroCard[i] = UIKit.Rect($"P{i + 1}HeroCard", root);
-                heroCard[i].sizeDelta = new Vector2(300, 300);
-                var rim = UIKit.Panel("Rim", heroCard[i], new Vector2(300, 320), i == 0 ? Pink : Cyan);
-                heroImg[i] = UIKit.Img("Hero", heroCard[i], null, new Vector2(282, 282), true);
-                heroTag[i] = UIKit.Label("Tag", heroCard[i], "", 36, i == 0 ? Pink : Cyan);
-                heroTag[i].rectTransform.anchoredPosition = new Vector2(0, -190);
+                heroCard[i].sizeDelta = new Vector2(420, 420);                     // การ์ดตัวละครใหญ่ (เดิม 300)
+                var rim = UIKit.Panel("Rim", heroCard[i], new Vector2(420, 448), i == 0 ? Pink : Cyan);
+                heroImg[i] = UIKit.Img("Hero", heroCard[i], null, new Vector2(395, 395), true);
+                heroTag[i] = UIKit.Label("Tag", heroCard[i], "", 56, i == 0 ? Pink : Cyan);
+                heroTag[i].rectTransform.anchoredPosition = new Vector2(0, -270);
             }
 
             flash = UIKit.Img("Flash", root, null, Vector2.zero, false); UIKit.Stretch(flash.rectTransform);
@@ -130,7 +130,7 @@ namespace RTE
             {
                 float k = Mathf.Clamp01((warpT - .35f) / .45f);
                 card.localScale = new Vector3(UIKit.EaseOutBack(k), Mathf.Lerp(.05f, 1, Mathf.Sqrt(k)), 1);
-                card.anchoredPosition = new Vector2(0, 70);
+                card.anchoredPosition = new Vector2(0, 230);   // ค่อนไปด้านบน ห่างการ์ดตัวละคร P1/P2 ด้านล่าง
                 cardGlow.color = new Color(.3f, .9f, 1f, .45f + .2f * Mathf.Sin(t * 9));
             }
 
@@ -142,7 +142,7 @@ namespace RTE
                 if (!on) continue;
                 float k = UIKit.EaseOutBack(Mathf.Clamp01((warpT - .7f - i * .15f) / .45f));
                 float side = i == 0 ? -1 : 1;
-                heroCard[i].anchoredPosition = new Vector2(side * Mathf.Lerp(1200, 330, k), -265);
+                heroCard[i].anchoredPosition = new Vector2(side * Mathf.Lerp(1300, 380, k), -190);
                 heroCard[i].localRotation = Quaternion.Euler(0, 0, side * -4);
                 var h = heroes[i] == Hero.None ? (Hero)i : heroes[i];
                 heroImg[i].sprite = UIKit.Load(h == Hero.Male ? "intro/card_male" : "intro/card_female");

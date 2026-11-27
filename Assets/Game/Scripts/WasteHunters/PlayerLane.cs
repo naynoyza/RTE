@@ -23,7 +23,7 @@ using UnityEngine.UI;
 
 namespace RTE
 {
-    public class PlayerLane
+    public partial class PlayerLane
     {
         public int Score, Recycled, Combo, ImpactCollected, ImpactSpawned;
         public bool Practice;                // โหมดซ้อมก่อนเริ่มเกม
@@ -84,6 +84,7 @@ namespace RTE
             // ลำดับชั้นจากล่างขึ้นบน: ถนน -> ขยะ -> ลำแสง -> ปืน -> เป้าเล็ง -> ข้อความ
             road = new RoadScroller(view, TrashPiece.HorizonY);
             trashLayer = UIKit.Rect("Trash", view); UIKit.Stretch(trashLayer);
+            airLayer = UIKit.Rect("AirBubbles", view); UIKit.Stretch(airLayer);   // ลูกอากาศ (PlayerLaneAir) อยู่เหนือขยะ
             beam = UIKit.Img("SuctionBeam", view, UIKit.Load("fx_glow"), new Vector2(10, 90), false);
             beam.rectTransform.pivot = new Vector2(0, .5f);
             beam.color = Color.clear;
@@ -135,6 +136,7 @@ namespace RTE
             botTarget = BotTarget;
             walk = new WalkController(settings, slot);
             hud = new PlayerHud(hudParent, slot);
+            InitAir();
             Reset();
         }
 
@@ -153,6 +155,8 @@ namespace RTE
             eventImgTime = 0; droneT = -1; eventImg.color = lightning.color = handIcon.color = drone.color = suckFx.color = Color.clear;
             foreach (var sp in dustSpecks) sp.color = Color.clear;
             dustHint.enabled = false;
+            ResetAir();
+            hud.SetHero(GameSession.Heroes[slot - 1]);
             RefreshHud();
         }
 
@@ -178,7 +182,6 @@ namespace RTE
                 var target = new Vector2((p.x - .5f) * LaneW, (p.y - .5f) * LaneH);
                 aim = Vector2.Lerp(aim, target, 1 - Mathf.Exp(-dt * 18));
             }
-            hud.SetWarning("");
 
             // 3) ข้อความเตือน
             UpdateToast(p, cameraOnline, playing, present, dt);
@@ -194,6 +197,7 @@ namespace RTE
                 target2 = canSuck ? FindTargetUnderCrosshair() : null;
                 MoveAndCollect(metersThisFrame, target2, canSuck && overdriveTime > 0, dt);
             }
+            TickAir(playing, showWorld, canSuck, metersThisFrame, dt);
 
             // 5) เป้าเล็ง ลำแสง และปืน
             DrawAim(showWorld, playing, present, target2);
@@ -373,6 +377,8 @@ namespace RTE
         // บอต: ขยะดี (ไม่ช็อต) ที่ใกล้ผู้เล่นที่สุด -> ตำแหน่ง 0..1 ของจอตัวเอง
         Vector2? BotTarget()
         {
+            var air = BotAirTarget();
+            if (air != null) return air;
             TrashPiece best = null;
             foreach (var t in pieces)
                 if (!t.Danger && t.SuckProgress < 0 && t.Drop <= 0 && (best == null || t.Z < best.Z)) best = t;
@@ -380,7 +386,9 @@ namespace RTE
             return new Vector2(best.ScreenPos.x / LaneW + .5f, best.ScreenPos.y / LaneH + .5f);
         }
 
-        float HitRadius => settings.HitRadiusPx * (overdriveTime > 0 ? settings.OverdriveAimScale : 1f);
+        float HitRadius => settings.HitRadiusPx * AimScale;
+        // OVERDRIVE = วงใหญ่ขึ้น, อากาศหมด = วงเล็กลง
+        float AimScale => (overdriveTime > 0 ? settings.OverdriveAimScale : 1f) * (OutOfAir ? settings.NoAirAimScale : 1f);
 
         // ขยะเข้ามาใกล้กว่า SuckRange x ระยะเกิด แล้วหรือยัง (เช่น 0.5 = ต้องเดินเข้าไปเกินครึ่งทาง)
         bool InRange(TrashPiece t) => t.Z <= TrashPiece.SpawnZ * settings.SuckRange;
@@ -447,7 +455,7 @@ namespace RTE
         void DrawAim(bool showWorld, bool playing, bool present, TrashPiece target)
         {
             bool show = showWorld && hand >= 0;
-            float rs = overdriveTime > 0 ? settings.OverdriveAimScale : 1f;
+            float rs = AimScale;
             crosshair.enabled = lockFill.enabled = crosshairDot.enabled = show;
             hint.enabled = playing && present && hand < 0;
             crosshair.rectTransform.anchoredPosition = aim;

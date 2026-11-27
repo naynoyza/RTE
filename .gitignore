@@ -70,3 +70,6 @@ meshy_output/**/*.mov
 
 # ---------- QA screenshots (ใหญ่มาก ~2GB เก็บไว้ในเครื่อง ไม่ขึ้น GitHub) ----------
 production/qa/evidence/
+
+# PNG ต้นฉบับของภาพแคป gameplay (ใหญ่ ~430MB) — ใน git เก็บเป็น JPG แทน
+Artwork/Gameplay/*.png

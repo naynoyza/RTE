@@ -137,10 +137,17 @@ namespace RTE.EditorTools
             var hwnd = ThreadWindows().FirstOrDefault(h => !before.Contains(h));
             if (hwnd == IntPtr.Zero) { Debug.LogWarning("[FullscreenGameView] หาหน้าต่างที่เพิ่งเปิดไม่เจอ"); return; }
 
-            // วางด้วย Win32 เป็นพิกเซลจริงของจอนั้น (Unity เองจะบีบหน้าต่างให้หลบ taskbar)
-            SetWindowPos(hwnd, HWND_TOPMOST, target.left, target.top,
-                target.right - target.left, target.bottom - target.top, SWP_SHOWWINDOW);
+            // บอก Unity ขนาดหน้าต่างเป็นหน่วย point (= พิกเซลจริง / pixelsPerPoint ของ Editor)
+            // ไม่งั้นถ้าจอที่สองตั้ง Scale ของ Windows ไม่เท่าจอหลัก Unity จะวาดเกมเล็กแค่มุมซ้ายล่าง
+            // Unity วาดภาพเกมด้วย Scale ของจอหลัก (จอที่หน้าต่าง Editor อยู่) เสมอ จึงหารด้วย Scale ของจอหลัก
+            // (อ่านจาก Windows ตรง ๆ) — จอที่สองจะ Scale/ความละเอียดเท่าไรก็เต็มจอพอดี
+            float scale = MainWindowScale();
+            view.position = new Rect(target.left / scale, target.top / scale,
+                (target.right - target.left) / scale, (target.bottom - target.top) / scale);
+            Place(hwnd, target);
             view.Focus();
+            // Unity อาจขยับหน้าต่างตามตำแหน่ง point ที่ตั้งไว้ในเฟรมถัดไป -> วางทับเป็นพิกเซลจริงอีกครั้ง
+            EditorApplication.delayCall += () => { if (FindPopup() != null) Place(hwnd, target); };
 
             // Unity สลับแท็บในตัว Editor ไปที่ Game ตอนกด Play -> สลับกลับมาที่ Scene (เกมเล่นอยู่อีกจอแล้ว)
             // แล้วคืนโฟกัสให้หน้าเต็มจอ เพื่อให้คีย์บอร์ด (Space/R/F1) ยังเข้าเกม
@@ -152,6 +159,22 @@ namespace RTE.EditorTools
             };
 #endif
         }
+
+#if UNITY_EDITOR_WIN
+        /// <summary>วางหน้าต่างเต็มจอเป็นพิกเซลจริง และอยู่บนสุด</summary>
+        static void Place(IntPtr hwnd, RECT target) =>
+            SetWindowPos(hwnd, HWND_TOPMOST, target.left, target.top,
+                target.right - target.left, target.bottom - target.top, SWP_SHOWWINDOW);
+
+        /// <summary>Scale ของจอที่หน้าต่างหลัก Unity อยู่ (1 = 100%, 1.5 = 150%) อ่านจาก Windows</summary>
+        static float MainWindowScale()
+        {
+            var main = System.Diagnostics.Process.GetCurrentProcess().MainWindowHandle;
+            try { uint dpi = main != IntPtr.Zero ? GetDpiForWindow(main) : 0; if (dpi > 0) return dpi / 96f; }
+            catch (EntryPointNotFoundException) { }
+            return EditorGUIUtility.pixelsPerPoint;
+        }
+#endif
 
         /// <summary>เอาแท็บ Scene ขึ้นมาด้านหน้าใน Editor หลัก (ถ้าเปิดไว้)</summary>
         static void ShowSceneTab()
@@ -235,6 +258,7 @@ namespace RTE.EditorTools
         [DllImport("user32.dll")] static extern bool EnumThreadWindows(uint threadId, WindowEnumProc callback, IntPtr data);
         [DllImport("kernel32.dll")] static extern uint GetCurrentThreadId();
         [DllImport("user32.dll")] static extern bool IsWindowVisible(IntPtr hwnd);
+        [DllImport("user32.dll")] static extern uint GetDpiForWindow(IntPtr hwnd);
         [DllImport("user32.dll")] static extern bool SetWindowPos(IntPtr hwnd, IntPtr after, int x, int y, int w, int h, uint flags);
 #endif
     }

@@ -69,6 +69,14 @@ namespace RTE
             Place();
         }
 
+        /// <summary>แปลงตำแหน่งบนถนน (lat เมตรซ้าย-ขวา, z เมตรข้างหน้า) เป็นพิกเซลบนจอครึ่ง + ยกขึ้น lift พิกเซล
+        /// ใช้ร่วมกับของอื่นที่วิ่งบนถนน (ลูกอากาศ) ให้มุมมองตรงกับขยะ. ตัวอย่าง: TrashPiece.ToScreen(0, 10, 40)</summary>
+        public static Vector2 ToScreen(float lat, float z, float lift)
+        {
+            z = Mathf.Max(.5f, z);
+            return new Vector2(lat * SideScale / z, HorizonY - GroundScale / z + lift);
+        }
+
         public int BaseScore => Kind.Score;
         public int Points => Kind.Score + (IsRare ? TrashCatalog.RareBonus : 0);
 

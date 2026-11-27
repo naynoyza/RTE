@@ -47,8 +47,8 @@ namespace RTE
 
             chargePos = SeedKit.BoxCenter($"arms_charge_p{slot}");
             pushPos = SeedKit.BoxCenter($"arms_push_p{slot}");
-            orbChargePos = water ? SeedKit.Px(470, 235) : SeedKit.Px(1465, 245);
-            palmPos = water ? SeedKit.Px(560, 470) : SeedKit.Px(1385, 455);
+            orbChargePos = water ? SeedKit.Px(420, 300) : SeedKit.Px(1520, 300);   // ระหว่างฝ่ามือทั้งสองตอนชูแขน (ภาพมือชุดใหม่)
+            palmPos = water ? SeedKit.Px(560, 490) : SeedKit.Px(1385, 490);       // ฝ่ามือด้านในตอนผลัก
             orbPos = orbChargePos;
 
             armsCharge = SeedKit.MakeSprite("ArmsCharge", root, SeedKit.Spr($"arms_charge_p{slot}", new Vector2(.5f, .5f)), SeedKit.OrderArms);

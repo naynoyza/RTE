@@ -1,7 +1,8 @@
 // =====================================================================================================
 // IntroCover — หน้าปกใหม่: วิดีโอ Video background/Sceen0.mp4 วนเต็มจอ + UI 0 (กรอบฮอโลแกรม 2 ผู้เล่น)
 // -----------------------------------------------------------------------------------------------------
-// UI 0 จะ "โผล่เป็นช่วง ๆ" (ทุก CycleSeconds โชว์ ShowSeconds) และ "ค้างไว้" ทันทีเมื่อมีผู้เล่นมายืนหน้ากล้อง
+// เริ่มที่หน้าปกเกม (วิดีโอ) ล้วน ๆ — UI 0 (ป็อปอัปผู้เล่น) ขึ้นเมื่อกล้องเจอคนเท่านั้น (และหน้าปกโชว์ครบ CoverMinSeconds แล้ว)
+// คนออกหมด -> ป็อปอัปจางหาย กลับเป็นหน้าปก
 // ใต้กรอบแต่ละฝั่งมีสถานะ: รอ / ใกล้-ไกลเกินไป / มาแล้ว ✓
 // ครบ 2 คนค้าง HoldSeconds -> Tick() คืน true (ไปหน้าเลือกตัวละคร)
 // ไม่มีกล้อง: Space = ข้าม
@@ -15,7 +16,7 @@ namespace RTE
 {
     public class IntroCover
     {
-        const float CycleSeconds = 12f, ShowSeconds = 6f, HoldSeconds = 2f;
+        const float CoverMinSeconds = 3f, HoldSeconds = 2f;
 
         readonly GameObject root;
         readonly VideoPlayer video;
@@ -83,9 +84,8 @@ namespace RTE
             bool p1 = online && players[0].present, p2 = online && players[1].present;
             bool anyone = p1 || p2 || (online && (players[0].approach > 0 || players[1].approach > 0));
 
-            // UI 0 โผล่เป็นช่วง ๆ หรือค้างเมื่อมีคน
-            float phase = (Time.time - shownAt) % CycleSeconds;
-            bool want = anyone || phase < ShowSeconds;
+            // หน้าปกเกม (วิดีโอ) ขึ้นก่อนเสมออย่างน้อย CoverMinSeconds -> กล้องเจอคนเมื่อไหร่ ป็อปอัปผู้เล่น (กรอบฟ้า/ส้ม) จึงขึ้น
+            bool want = anyone && Time.time - shownAt >= CoverMinSeconds;
             alpha = Mathf.MoveTowards(alpha, want ? 1 : 0, Time.deltaTime * 1.6f);
             uiGroup.alpha = alpha;
             uiGroup.transform.localScale = Vector3.one * Mathf.Lerp(1.04f, 1f, alpha);
@@ -98,7 +98,7 @@ namespace RTE
             wasReady[0] = p1; wasReady[1] = p2;
 
             float bothBefore = bothTime;
-            bothTime = p1 && p2 ? bothTime + Time.deltaTime : 0;
+            bothTime = p1 && p2 && alpha >= .99f ? bothTime + Time.deltaTime : 0;   // นับเมื่อป็อปอัปขึ้นเต็มแล้วเท่านั้น
             if (bothTime > 0 && Mathf.CeilToInt(HoldSeconds - bothTime) != Mathf.CeilToInt(HoldSeconds - bothBefore))
                 Sfx.Play("tick", .6f);
             if (p1 && p2)

@@ -160,6 +160,23 @@ MonoBehaviour:
     - 60
     FeverSeconds: 6
     DustAt: 40
+    AirDrainPerSecond: 1.6
+    DustDrainScale: 1.5
+    AirBubbleGain: 30
+    LeafBubbleGain: 50
+    LeafChance: 0.15
+    AirSpawnMin: 6
+    AirSpawnMax: 8
+    AirLowSpawnBelow: 30
+    AirLowSpawnMin: 4
+    AirLowSpawnMax: 5
+    AirWarnBelow: 25
+    GiftLife: 4
+    AirGrabSeconds: 0.35
+    SwipeSpeedPx: 1800
+    TeamBonus: 15
+    NoAirAimScale: 0.5
+    NoAirSpeedScale: 0.5
     StandbyHold: 2
     StandbyEmpty: 8
     BaseSpeed: 1.4
