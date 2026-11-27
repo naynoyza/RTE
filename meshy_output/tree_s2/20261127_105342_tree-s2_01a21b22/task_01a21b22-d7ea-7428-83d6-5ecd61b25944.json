@@ -1,0 +1,40 @@
+{
+  "id": "01a21b22-d7ea-7428-83d6-5ecd61b25944",
+  "type": "text-to-3d-preview",
+  "mode": "preview",
+  "name": "",
+  "model_type": "standard",
+  "seed": 2585271573,
+  "prompt": "young sapling, thin slightly curved brown stem about knee height with two small side twigs and three pairs of small green leaves, on a small soil mound, stylized cartoon hand-painted style, smooth simple shapes, brown trunk, bright lime green leaves, game asset, single object, no ground plane",
+  "texture_prompt": "",
+  "texture_image_url": "",
+  "status": "SUCCEEDED",
+  "created_at": 1795751600431,
+  "progress": 100,
+  "started_at": 1795751600437,
+  "finished_at": 1795751617873,
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/fce2ff06-0b81-4f1b-a5c3-bfe4c8487ffd/tasks/01a21b22-d7ea-7428-83d6-5ecd61b25944/output/model.glb?Expires=4949337600&Signature=gADaPgYCZ08~-8ylEjkN3y0mZQwinEHwC0SMbea-U7rVdkW40FrkbWa4gTXgrWS5cipv9mo7Dhp-eB3o-BiLtGEC1BPPo3pOR4bvpnSkVphogMR6QZbnqkgctXunC-CW1cCBu-EnW4-02XOBkyEQA-mbg6SrXQXzf2kEU4QyZQMxRnicSH41xWiYOV40Y1Q~8mHy2nMBOPjtt319wPi92eWeNjL-d451g9YrkQ3t8aZvWherHi8LXuX0~83ytj6HTNVE7HBUS8oVawS8m1IFF0Tu8ffSapheavudT2U2S4OAKbVZvemjyxlHDmQB0PjH4RFS0Dy9Jy11AU5sm6FeyQ__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "thumbnail_url": "https://assets.meshy.ai/fce2ff06-0b81-4f1b-a5c3-bfe4c8487ffd/tasks/01a21b22-d7ea-7428-83d6-5ecd61b25944/output/preview.png?Expires=4949337600&Signature=PSxrRW~mJjYKmQmJbN9IZIpr3~DEDelXhOro9a5oVCxckwAGw0C5c-hxdY7qj23TRsYSPKF-zM1zQy5aCbtlheO4JPyQ9fr33vz~ReF58pGJ9QX0jCDWCRzdMIQlBXUEXdG9CfNqXn0Vyy9JN-46i6c76IdPPwYT1ajJ6q6Sk2FpIT~BqXM690Kaebx9Sck4n5JoCy9uZuQdhb2xViIc-9meI9rTfUVZVzmR6Or5RZpY1ey~CvVghaMFy~f~evLdcErTrQAMwK5C5I4SVVcpBqpoB3pgbPXUKVlfHtDWhDS86sCOj3RDbGeXlJh~Qqz5Vqwz1Yt5xJRW-jNHN4eKRA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "texture_urls": [],
+  "consumed_credits": 20,
+  "task_error": null,
+  "expires_at": null,
+  "input": {
+    "mode": "preview",
+    "prompt": "young sapling, thin slightly curved brown stem about knee height with two small side twigs and three pairs of small green leaves, on a small soil mound, stylized cartoon hand-painted style, smooth simple shapes, brown trunk, bright lime green leaves, game asset, single object, no ground plane",
+    "target_formats": [
+      "glb"
+    ]
+  },
+  "output": {
+    "seed": 2585271573,
+    "model_urls": {
+      "glb": "https://assets.meshy.ai/fce2ff06-0b81-4f1b-a5c3-bfe4c8487ffd/tasks/01a21b22-d7ea-7428-83d6-5ecd61b25944/output/model.glb?Expires=4949337600&Signature=gADaPgYCZ08~-8ylEjkN3y0mZQwinEHwC0SMbea-U7rVdkW40FrkbWa4gTXgrWS5cipv9mo7Dhp-eB3o-BiLtGEC1BPPo3pOR4bvpnSkVphogMR6QZbnqkgctXunC-CW1cCBu-EnW4-02XOBkyEQA-mbg6SrXQXzf2kEU4QyZQMxRnicSH41xWiYOV40Y1Q~8mHy2nMBOPjtt319wPi92eWeNjL-d451g9YrkQ3t8aZvWherHi8LXuX0~83ytj6HTNVE7HBUS8oVawS8m1IFF0Tu8ffSapheavudT2U2S4OAKbVZvemjyxlHDmQB0PjH4RFS0Dy9Jy11AU5sm6FeyQ__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    },
+    "thumbnail_url": "https://assets.meshy.ai/fce2ff06-0b81-4f1b-a5c3-bfe4c8487ffd/tasks/01a21b22-d7ea-7428-83d6-5ecd61b25944/output/preview.png?Expires=4949337600&Signature=PSxrRW~mJjYKmQmJbN9IZIpr3~DEDelXhOro9a5oVCxckwAGw0C5c-hxdY7qj23TRsYSPKF-zM1zQy5aCbtlheO4JPyQ9fr33vz~ReF58pGJ9QX0jCDWCRzdMIQlBXUEXdG9CfNqXn0Vyy9JN-46i6c76IdPPwYT1ajJ6q6Sk2FpIT~BqXM690Kaebx9Sck4n5JoCy9uZuQdhb2xViIc-9meI9rTfUVZVzmR6Or5RZpY1ey~CvVghaMFy~f~evLdcErTrQAMwK5C5I4SVVcpBqpoB3pgbPXUKVlfHtDWhDS86sCOj3RDbGeXlJh~Qqz5Vqwz1Yt5xJRW-jNHN4eKRA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "alpha_thumbnail_url": null,
+    "texture_urls": []
+  }
+}

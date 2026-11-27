@@ -1,0 +1,40 @@
+{
+  "id": "01a21b22-eb9b-710e-bd32-b49115cd556b",
+  "type": "text-to-3d-preview",
+  "mode": "preview",
+  "name": "",
+  "model_type": "standard",
+  "seed": 3030054323,
+  "prompt": "young tree, slender twisted brown trunk splitting into several thin branches, with a few round puffy clusters of green leaves forming a partial canopy, stylized cartoon hand-painted style, smooth simple shapes, brown trunk, bright lime green leaves, game asset, single object, no ground plane",
+  "texture_prompt": "",
+  "texture_image_url": "",
+  "status": "SUCCEEDED",
+  "created_at": 1795751606873,
+  "progress": 100,
+  "started_at": 1795751606883,
+  "finished_at": 1795751628108,
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/fce2ff06-0b81-4f1b-a5c3-bfe4c8487ffd/tasks/01a21b22-eb9b-710e-bd32-b49115cd556b/output/model.glb?Expires=4949337600&Signature=Veox~ZSNw4wTQV~NJXkjNP-ym-vwhZgu7MsAWM0IctyV3K9eM-v0nYnhKagay70WSyWzV1-5rdw3Brv67v72H~04YOkJOXPAg5fdCkoFz3OrCh99yznbvRE2w4eIdqQ2DdRYGji-pbHYt1-PxYGTFh0OwrM27Kv-wB8lnqeT0aog-5TMy1V7CaUD7~P8JYtFOoGRWeDozofP5laRaKIEVpPt-aIjlHwVgaN1fUJciNl0M-9zbdbg7PDavQIb2kDj0CFoaxd3LubxM1MNDd4U4O13VIbOT-IhT8-LsmDRXGAAV6fAQxRCh6vY1ypHA4iIyYGCtJ~PebI~osn7THu7sw__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "thumbnail_url": "https://assets.meshy.ai/fce2ff06-0b81-4f1b-a5c3-bfe4c8487ffd/tasks/01a21b22-eb9b-710e-bd32-b49115cd556b/output/preview.png?Expires=4949337600&Signature=i5bQoLVKL4Qf0d1VpF5VtzmdZoRnpeLOR349crEOQfCZCOLug-Ga6sOEbk-fH5RTWg6ib7KPAkZSmYoz6UjKu7IHd~KtYcF5uQ-dEPTs6H1W9SYWI1ePNU9wtzjycDcv1Gyv2VByRaoKPay9tWGMu3mWNXSc0xM3B2zry9QOt-uMHRy0kOJ7gDaGhy8yHMT6ph5nWlxX8SximTNwNv4f4hVtZeiMId0ce2iPJVkHj2pLaYO9raS8keiIG2~hoJ8vQlgYSugDAmPho89ZiG6ERYaD7dqXAOkT2y0yQwnHEzXnhSwVXlpEf891SpEAUP5KQJbDwknYi3uOK2Tz4iuX0w__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "texture_urls": [],
+  "consumed_credits": 20,
+  "task_error": null,
+  "expires_at": null,
+  "input": {
+    "mode": "preview",
+    "prompt": "young tree, slender twisted brown trunk splitting into several thin branches, with a few round puffy clusters of green leaves forming a partial canopy, stylized cartoon hand-painted style, smooth simple shapes, brown trunk, bright lime green leaves, game asset, single object, no ground plane",
+    "target_formats": [
+      "glb"
+    ]
+  },
+  "output": {
+    "seed": 3030054323,
+    "model_urls": {
+      "glb": "https://assets.meshy.ai/fce2ff06-0b81-4f1b-a5c3-bfe4c8487ffd/tasks/01a21b22-eb9b-710e-bd32-b49115cd556b/output/model.glb?Expires=4949337600&Signature=Veox~ZSNw4wTQV~NJXkjNP-ym-vwhZgu7MsAWM0IctyV3K9eM-v0nYnhKagay70WSyWzV1-5rdw3Brv67v72H~04YOkJOXPAg5fdCkoFz3OrCh99yznbvRE2w4eIdqQ2DdRYGji-pbHYt1-PxYGTFh0OwrM27Kv-wB8lnqeT0aog-5TMy1V7CaUD7~P8JYtFOoGRWeDozofP5laRaKIEVpPt-aIjlHwVgaN1fUJciNl0M-9zbdbg7PDavQIb2kDj0CFoaxd3LubxM1MNDd4U4O13VIbOT-IhT8-LsmDRXGAAV6fAQxRCh6vY1ypHA4iIyYGCtJ~PebI~osn7THu7sw__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    },
+    "thumbnail_url": "https://assets.meshy.ai/fce2ff06-0b81-4f1b-a5c3-bfe4c8487ffd/tasks/01a21b22-eb9b-710e-bd32-b49115cd556b/output/preview.png?Expires=4949337600&Signature=i5bQoLVKL4Qf0d1VpF5VtzmdZoRnpeLOR349crEOQfCZCOLug-Ga6sOEbk-fH5RTWg6ib7KPAkZSmYoz6UjKu7IHd~KtYcF5uQ-dEPTs6H1W9SYWI1ePNU9wtzjycDcv1Gyv2VByRaoKPay9tWGMu3mWNXSc0xM3B2zry9QOt-uMHRy0kOJ7gDaGhy8yHMT6ph5nWlxX8SximTNwNv4f4hVtZeiMId0ce2iPJVkHj2pLaYO9raS8keiIG2~hoJ8vQlgYSugDAmPho89ZiG6ERYaD7dqXAOkT2y0yQwnHEzXnhSwVXlpEf891SpEAUP5KQJbDwknYi3uOK2Tz4iuX0w__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "alpha_thumbnail_url": null,
+    "texture_urls": []
+  }
+}

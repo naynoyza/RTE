@@ -63,3 +63,7 @@ docs/consistency-failures.md
 /test-results/
 # ต้นฉบับ template (มี .git ของตัวเอง) — ไม่ต้อง commit
 /Claude-Code-Game-Studios/
+
+# ---------- Meshy output ขนาดใหญ่ (สร้างใหม่ได้จาก Meshy task / เรนเดอร์ใหม่) ----------
+meshy_output/**/*.glb
+meshy_output/**/*.mov

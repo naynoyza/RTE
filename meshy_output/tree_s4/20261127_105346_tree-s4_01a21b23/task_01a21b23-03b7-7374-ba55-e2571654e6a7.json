@@ -1,0 +1,40 @@
+{
+  "id": "01a21b23-03b7-7374-ba55-e2571654e6a7",
+  "type": "text-to-3d-preview",
+  "mode": "preview",
+  "name": "",
+  "model_type": "standard",
+  "seed": 4100113222,
+  "prompt": "mature full grown tree, thick brown trunk with visible spreading roots at the base, large dense round canopy made of many puffy rounded green leaf clumps, stylized cartoon hand-painted style, smooth simple shapes, brown trunk, bright lime green leaves, game asset, single object, no ground plane",
+  "texture_prompt": "",
+  "texture_image_url": "",
+  "status": "SUCCEEDED",
+  "created_at": 1795751611347,
+  "progress": 100,
+  "started_at": 1795751611356,
+  "finished_at": 1795751649257,
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/fce2ff06-0b81-4f1b-a5c3-bfe4c8487ffd/tasks/01a21b23-03b7-7374-ba55-e2571654e6a7/output/model.glb?Expires=4949337600&Signature=ngdLkYGrajqN0VWP0cdO78A5eX65yD5AJF7mQ8U1g3SGyeYpn1YQwfn0-LtsBhZNY2Qa1o~LEm98kbBwx1d6CQZ0BnGRi4NxvWSxLTlIPYWalYMSeiNFPThaEdS3o1zSsni5AG7oKTxNmBDJL70Eoyhy9esGVgHBFFM9Mm-MwfRJ2KUPD84IjP0y0qGGejDXDzdeJcBwp26OZ43S~MfZlYRXnNpIeYBsABLkqAa30gRcvcsZci5VJFtWGAFKisGIABUSHOWNx0X-3MXAtVbdu9MTc78T4OMJCE57BFtTv1LPg7BtdNGNPdKFe1T1xbjPAnk13nFwx8zJw1n0FfNXKg__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "thumbnail_url": "https://assets.meshy.ai/fce2ff06-0b81-4f1b-a5c3-bfe4c8487ffd/tasks/01a21b23-03b7-7374-ba55-e2571654e6a7/output/preview.png?Expires=4949337600&Signature=bNFIDolShB-EaE00UYTuS0auWP5dN2CqBhsUjBsHcAx01rJFyMKg87seKMXORTTygItZydCjc-D2qaEkO-29jVOnOvYXGRtMqcX4pJ9l3qCrJurAWCNF9zeypIkvderMhO8UbcP6vGCcpGket9oLNSp3NKq3J4lrrucDfPow6wMrYInmsM5DaM6n3cxli~7iZXRC94r2wwlIczO90Roo5LoAEeW9JCPuCl3x65MsKSfMAOYeYxpkK7QnpXYTCx8qbJDfpjD~DQfuYr-f1WvdqZz~WMhr-IEfxvaJin-kmlgldFHQt04vlknBgkFBVBAo~aY08HzkbYT4ovRe8YiW2w__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "texture_urls": [],
+  "consumed_credits": 20,
+  "task_error": null,
+  "expires_at": null,
+  "input": {
+    "mode": "preview",
+    "prompt": "mature full grown tree, thick brown trunk with visible spreading roots at the base, large dense round canopy made of many puffy rounded green leaf clumps, stylized cartoon hand-painted style, smooth simple shapes, brown trunk, bright lime green leaves, game asset, single object, no ground plane",
+    "target_formats": [
+      "glb"
+    ]
+  },
+  "output": {
+    "seed": 4100113222,
+    "model_urls": {
+      "glb": "https://assets.meshy.ai/fce2ff06-0b81-4f1b-a5c3-bfe4c8487ffd/tasks/01a21b23-03b7-7374-ba55-e2571654e6a7/output/model.glb?Expires=4949337600&Signature=ngdLkYGrajqN0VWP0cdO78A5eX65yD5AJF7mQ8U1g3SGyeYpn1YQwfn0-LtsBhZNY2Qa1o~LEm98kbBwx1d6CQZ0BnGRi4NxvWSxLTlIPYWalYMSeiNFPThaEdS3o1zSsni5AG7oKTxNmBDJL70Eoyhy9esGVgHBFFM9Mm-MwfRJ2KUPD84IjP0y0qGGejDXDzdeJcBwp26OZ43S~MfZlYRXnNpIeYBsABLkqAa30gRcvcsZci5VJFtWGAFKisGIABUSHOWNx0X-3MXAtVbdu9MTc78T4OMJCE57BFtTv1LPg7BtdNGNPdKFe1T1xbjPAnk13nFwx8zJw1n0FfNXKg__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    },
+    "thumbnail_url": "https://assets.meshy.ai/fce2ff06-0b81-4f1b-a5c3-bfe4c8487ffd/tasks/01a21b23-03b7-7374-ba55-e2571654e6a7/output/preview.png?Expires=4949337600&Signature=bNFIDolShB-EaE00UYTuS0auWP5dN2CqBhsUjBsHcAx01rJFyMKg87seKMXORTTygItZydCjc-D2qaEkO-29jVOnOvYXGRtMqcX4pJ9l3qCrJurAWCNF9zeypIkvderMhO8UbcP6vGCcpGket9oLNSp3NKq3J4lrrucDfPow6wMrYInmsM5DaM6n3cxli~7iZXRC94r2wwlIczO90Roo5LoAEeW9JCPuCl3x65MsKSfMAOYeYxpkK7QnpXYTCx8qbJDfpjD~DQfuYr-f1WvdqZz~WMhr-IEfxvaJin-kmlgldFHQt04vlknBgkFBVBAo~aY08HzkbYT4ovRe8YiW2w__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "alpha_thumbnail_url": null,
+    "texture_urls": []
+  }
+}

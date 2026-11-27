@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "projects": [
+    {
+      "folder": "20261127_111238_tree-v2-s2_01a21b34",
+      "prompt": "tree_v2_s2",
+      "task_type": "image-to-3d",
+      "root_task_id": "01a21b34-30ff-7402-b9c6-230a61080564",
+      "created_at": "2026-11-27T04:12:38.068Z",
+      "updated_at": "2026-11-27T04:15:09.616Z",
+      "task_count": 1
+    }
+  ]
+}

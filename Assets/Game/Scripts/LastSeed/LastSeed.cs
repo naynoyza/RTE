@@ -94,7 +94,7 @@ namespace RTE
             var bs = background.sprite.bounds.size; var fs = finaleBg.sprite.bounds.size;
             finaleBg.transform.localScale = new Vector3(bs.x / fs.x, bs.y / fs.y, 1);
             finaleBg.color = new Color(1, 1, 1, 0);
-            tree = new TreeView(world);
+            tree = new TreeView(world, Settings.UseVideoTree);
             for (int i = 0; i < 2; i++)
             {
                 guardians[i] = new GuardianView(world, i + 1, Settings);

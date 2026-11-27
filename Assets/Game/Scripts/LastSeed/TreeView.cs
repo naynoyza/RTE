@@ -8,8 +8,13 @@
 // ในแต่ละระดับต้นไม้ค่อย ๆ ขยาย 80% -> 100%, เปลี่ยนระดับ = ภาพใหม่จางเข้า + เด้ง + พลุแสง
 // ได้รับพลัง (Receive): ชั้นเรืองแสง (ภาพเดียวกันแบบ additive) + แสงฟุ้ง + ประกายรอบต้น
 // ดึงข้อมูล: Resources/Sprites/seed/tree_s1..s4 (Tools/make_seed_v2.py), fx_soft, fx_spark, fx_drop
+// โหมดวิดีโอ (useVideo): Resources/Video/tree_growth.webm — ต้นไม้ 3D จาก Meshy โต 4 ระยะ, VP8 พื้นหลังโปร่งใส
+//   เล่นช่วง "โต" ของวิดีโอทุกครั้งที่ขึ้นระดับใหม่ แล้วหยุดค้างที่ท่าพักของระดับนั้น (VideoRest)
+//   ที่มา: meshy_output/tree_v2/tree_s1..s4.glb (Meshy image-to-3d จากภาพอ้างอิง) -> เรนเดอร์ three.js
+//          1236x1080 30fps 12 วิ (ระยะ 4 ชนขอบภาพพอดี) | ในเกมยอดระยะ 4 แตะขอบจอบนพอดี
 // =====================================================================================================
 using UnityEngine;
+using UnityEngine.Video;
 
 namespace RTE
 {
@@ -32,9 +37,20 @@ namespace RTE
         float shown, receive, pulse;
         int stageNow;
 
+        // ---- โหมดวิดีโอ: ค่าวัดจากเฟรมที่เรนเดอร์ (ภาพ VideoW x VideoPx)
+        const float VideoPx = 1080f, VideoW = 1236f;
+        static readonly float[] VideoRest = { 2.3f, 4.9f, 7.7f, 11.5f };      // วินาทีที่ต้นไม้แต่ละระดับโตเสร็จแล้ว (หยุดค้างตรงนี้)
+        static readonly float[] VideoTreePx = { 323f, 560f, 818f, 1076f };   // ความสูงต้นไม้ (px) ณ VideoRest ของแต่ละระดับ
+        const float VideoBasePx = 1077f, VideoBaseX = 620f;                  // จุดโคนต้น (px นับจากบนซ้าย)
+        const float ScreenTop = 5.4f;                                        // ขอบบนจอในหน่วยโลก (กล้อง ortho size 5.4)
+        readonly bool useVideo;
+        VideoPlayer video;
+        Material videoMat, videoGlowMat;
+        float videoWorldH, videoTarget;
+
         public static int StageOf(float growth) { int k = 0; for (int i = 1; i < Stages; i++) if (growth >= StageStart[i]) k = i; return k; }
 
-        public TreeView(Transform parent)
+        public TreeView(Transform parent, bool useVideo = false)
         {
             root = new GameObject("Tree").transform; root.SetParent(parent, false); root.position = Base;
             sway = new GameObject("Sway").transform; sway.SetParent(root, false);
@@ -52,6 +68,8 @@ namespace RTE
                 stageH[i] = tex.height * .93f / ppu;
             }
 
+            this.useVideo = useVideo && BuildVideo();
+
             // ประกายรอบต้นขณะได้รับพลัง
             sparks = SeedKit.Particles("Sparks", root, "fx_spark", true, SeedKit.OrderTreeFx, 1.1f, .35f, .8f, new Color(.85f, 1f, .6f));
             var sh = sparks.shape; sh.enabled = true; sh.shapeType = ParticleSystemShapeType.Circle; sh.radius = 1.2f;
@@ -67,12 +85,67 @@ namespace RTE
             burst = SeedKit.Particles("Burst", root, "fx_soft", true, SeedKit.OrderTreeFx + 2, .9f, .5f, 6f, new Color(1f, 1f, .7f));
             var bsh = burst.shape; bsh.enabled = true; bsh.shapeType = ParticleSystemShapeType.Circle; bsh.radius = .4f;
             Set(0, 0, 0, true);
+            if (this.useVideo) VideoTo(0, true);
+        }
+
+        /// สร้าง quad แสดงวิดีโอต้นไม้ (ขนาดเท่าต้นไม้ระดับ 4 ของภาพ 2D เดิม, โคนต้นตรงจุด Base) — ไม่มีคลิป = กลับไปใช้ภาพ 2D
+        bool BuildVideo()
+        {
+            var clip = Resources.Load<VideoClip>("Video/tree_growth");
+            if (clip == null) { Debug.LogWarning("[TreeView] missing Resources/Video/tree_growth — using 2D sprites"); return false; }
+
+            var rt = new RenderTexture((int)clip.width, (int)clip.height, 0, RenderTextureFormat.ARGB32) { name = "TreeVideoRT" };
+            rt.Create();
+            // ระยะ 4 สูงจากโคนต้นถึงขอบจอบนพอดี
+            videoWorldH = (ScreenTop - Base.y) * VideoPx / VideoTreePx[Stages - 1];
+            float baseFromBottom = (VideoPx - VideoBasePx) / VideoPx;
+            float baseFromCenterX = (VideoBaseX - VideoW * .5f) / VideoW;
+
+            MeshRenderer Quad(string name, int order, bool additive, out Material mat)
+            {
+                var go = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                go.name = name;
+                Object.Destroy(go.GetComponent<Collider>());
+                go.transform.SetParent(sway, false);
+                float videoWorldW = videoWorldH * clip.width / clip.height;
+                go.transform.localScale = new Vector3(videoWorldW, videoWorldH, 1);
+                go.transform.localPosition = new Vector3(-baseFromCenterX * videoWorldW, (.5f - baseFromBottom) * videoWorldH, 0);
+                var mr = go.GetComponent<MeshRenderer>();
+                mat = SeedKit.Mat(null, additive, Color.white);
+                mat.mainTexture = rt;
+                mr.sharedMaterial = mat; mr.sortingOrder = order;
+                mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off; mr.receiveShadows = false;
+                return mr;
+            }
+            var quad = Quad("VideoTree", SeedKit.OrderTree, false, out videoMat);
+            Quad("VideoTreeGlow", SeedKit.OrderTree + 1, true, out videoGlowMat);
+
+            video = quad.gameObject.AddComponent<VideoPlayer>();
+            video.playOnAwake = false; video.isLooping = false; video.waitForFirstFrame = true; video.skipOnDrop = true;
+            video.source = VideoSource.VideoClip; video.clip = clip;
+            video.renderMode = VideoRenderMode.RenderTexture; video.targetTexture = rt;
+            video.audioOutputMode = VideoAudioOutputMode.None;
+            // หยุดที่ท่าพักจากเหตุการณ์เฟรมของวิดีโอเอง (บางสถานะของเกมไม่ได้เรียก Set ทุกเฟรม)
+            video.sendFrameReadyEvents = true;
+            video.frameReady += (vp, frame) => { if (vp.isPlaying && frame / vp.frameRate >= videoTarget) vp.Pause(); };
+            video.Prepare();
+
+            for (int i = 0; i < Stages; i++) { trees[i].enabled = false; glowTrees[i].enabled = false; }
+            return true;
+        }
+
+        /// เล่นวิดีโอไปจนถึงท่าพักของระดับ stage แล้วหยุด (ถอยหลังไม่ได้ -> เริ่มจากต้นคลิปใหม่)
+        void VideoTo(int stage, bool restart)
+        {
+            videoTarget = VideoRest[stage];
+            if (restart) { video.Stop(); video.time = 0; }
+            if (video.time < videoTarget - .02f) video.Play();
         }
 
         /// <summary>ความทึบของต้นไม้ทั้งต้น (1 = เห็นเต็ม, 0 = หายไป) — ฉากจบใช้จางต้นไม้ออกให้เหลือแต่เมืองที่ฟื้นแล้ว</summary>
         public float Fade = 1f;
 
-        public void Reset() { shown = 0; receive = 0; pulse = 0; stageNow = 0; Fade = 1f; SeedKit.Rate(leaves, 0); Set(0, 0, 0, true); }
+        public void Reset() { shown = 0; receive = 0; pulse = 0; stageNow = 0; Fade = 1f; SeedKit.Rate(leaves, 0); Set(0, 0, 0, true); if (useVideo) VideoTo(0, true); }
 
         /// เปลี่ยนระดับ / PERFECT SYNC: พลุแสง + เด้ง
         public void Burst(int count = 60) { burst.Emit(count); pulse = 1; }
@@ -87,8 +160,7 @@ namespace RTE
             pulse = Mathf.Max(0, pulse - dt * 2.2f);
 
             int st = StageOf(shown);
-            if (st != stageNow) { if (st > stageNow && !snap) Burst(70); stageNow = st; }
-
+            if (st != stageNow) { if (st > stageNow && !snap) Burst(70); if (useVideo) VideoTo(st, st < stageNow); stageNow = st; }
             // ระดับปัจจุบันจางเข้า ระดับเก่าจางออก (ไม่ตัดวูบ)
             float height = 0;
             for (int i = 0; i < Stages; i++)
@@ -100,7 +172,12 @@ namespace RTE
                 trees[i].transform.localScale = glowTrees[i].transform.localScale = Vector3.one * scale;
                 trees[i].color = new Color(1, 1, 1, weight[i] * Fade);
                 glowTrees[i].color = new Color(.55f, .75f, .35f, weight[i] * (.45f * receive + .6f * pulse) * Fade);
-                height += stageH[i] * scale * weight[i];
+                height += (useVideo ? videoWorldH * VideoTreePx[i] / VideoPx : stageH[i] * scale) * weight[i];
+            }
+            if (useVideo)
+            {
+                videoMat.color = new Color(1, 1, 1, Fade);
+                videoGlowMat.color = new Color(.55f, .75f, .35f, (.45f * receive + .6f * pulse) * Fade);
             }
             Target = Base + new Vector3(0, Mathf.Max(.6f, height * .55f), 0);
 

@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "projects": [
+    {
+      "folder": "20261127_105346_tree-s4_01a21b23",
+      "prompt": "tree_s4",
+      "task_type": "text-to-3d-preview",
+      "root_task_id": "01a21b23-03b7-7374-ba55-e2571654e6a7",
+      "created_at": "2026-11-27T03:53:46.843Z",
+      "updated_at": "2026-11-27T03:58:03.720Z",
+      "task_count": 2
+    }
+  ]
+}

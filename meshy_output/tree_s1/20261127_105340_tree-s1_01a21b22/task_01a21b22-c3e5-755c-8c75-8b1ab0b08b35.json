@@ -1,0 +1,40 @@
+{
+  "id": "01a21b22-c3e5-755c-8c75-8b1ab0b08b35",
+  "type": "text-to-3d-preview",
+  "mode": "preview",
+  "name": "",
+  "model_type": "standard",
+  "seed": 3084226347,
+  "prompt": "tiny sprout seedling, short thin brown stem with two round cotyledon leaves opening in a V shape, on a small mound of soil, stylized cartoon hand-painted style, smooth simple shapes, brown trunk, bright lime green leaves, game asset, single object, no ground plane",
+  "texture_prompt": "",
+  "texture_image_url": "",
+  "status": "SUCCEEDED",
+  "created_at": 1795751595701,
+  "progress": 100,
+  "started_at": 1795751595713,
+  "finished_at": 1795751616564,
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/fce2ff06-0b81-4f1b-a5c3-bfe4c8487ffd/tasks/01a21b22-c3e5-755c-8c75-8b1ab0b08b35/output/model.glb?Expires=4949337600&Signature=Bq6SUTNzyLkAFOt0aeiQ8x49kJ~jXP-5f6NqSN4EeZOsQDQDykt2i2uH15r~m6PrVgraZqK0Ayp7vD0LozuB4Xw1VFMgjcGCK1n-9ExDjqHnq6S-1uhBF7JI0IC0WV62BSIm3dtZwWYGjnH~AX-GWa0bXapkyZCoMC8x5sJfAYpCCQPD4Fkme9hC6Z3QNe8QphpXH3X4GvhjOG55lccmiz9BustCWS3kSkpXNdQbJr-jcHTNP3eHaRDar~r7F-1YkrrNrh08NZ4fWf4evaQoj-lIcdeWsmiUiwxypEDLJryPvspVAZ1bMTKfslnT6G7X5Nn7gCo5ImebJeKR9eQKCQ__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "thumbnail_url": "https://assets.meshy.ai/fce2ff06-0b81-4f1b-a5c3-bfe4c8487ffd/tasks/01a21b22-c3e5-755c-8c75-8b1ab0b08b35/output/preview.png?Expires=4949337600&Signature=Jr2w0mpyjxa1Cxbx6K1POZCtqaocPupaq12TwEEL~Eu~rCJR4vPRjMGFToJpQ5xw~UyhI~M4RV7BLBHR1qxbeCCtx9gihgmR1tcmqUx7tF-KAcMwHGazy59iWwTS9gMF02ehLfK7erYtIYpsp0PByiRhZmwswpuDjqfThqX7rHgrd7EKNGn3ONxnvXRb1ok1UOkAjF9ZXynKOUbEemSJHj5JomA0yGrupPJS~kgzsk4NAQ~~LRYjLnSugGVUJsCbse-raZcAXKmPi~-pLu~haY6iTptvaS1NswvuwzUZnmYjhj-ddRy9TLINScohyapTovBWsLK9NDWnm-wUnUBBjw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "texture_urls": [],
+  "consumed_credits": 20,
+  "task_error": null,
+  "expires_at": null,
+  "input": {
+    "mode": "preview",
+    "prompt": "tiny sprout seedling, short thin brown stem with two round cotyledon leaves opening in a V shape, on a small mound of soil, stylized cartoon hand-painted style, smooth simple shapes, brown trunk, bright lime green leaves, game asset, single object, no ground plane",
+    "target_formats": [
+      "glb"
+    ]
+  },
+  "output": {
+    "seed": 3084226347,
+    "model_urls": {
+      "glb": "https://assets.meshy.ai/fce2ff06-0b81-4f1b-a5c3-bfe4c8487ffd/tasks/01a21b22-c3e5-755c-8c75-8b1ab0b08b35/output/model.glb?Expires=4949337600&Signature=Bq6SUTNzyLkAFOt0aeiQ8x49kJ~jXP-5f6NqSN4EeZOsQDQDykt2i2uH15r~m6PrVgraZqK0Ayp7vD0LozuB4Xw1VFMgjcGCK1n-9ExDjqHnq6S-1uhBF7JI0IC0WV62BSIm3dtZwWYGjnH~AX-GWa0bXapkyZCoMC8x5sJfAYpCCQPD4Fkme9hC6Z3QNe8QphpXH3X4GvhjOG55lccmiz9BustCWS3kSkpXNdQbJr-jcHTNP3eHaRDar~r7F-1YkrrNrh08NZ4fWf4evaQoj-lIcdeWsmiUiwxypEDLJryPvspVAZ1bMTKfslnT6G7X5Nn7gCo5ImebJeKR9eQKCQ__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    },
+    "thumbnail_url": "https://assets.meshy.ai/fce2ff06-0b81-4f1b-a5c3-bfe4c8487ffd/tasks/01a21b22-c3e5-755c-8c75-8b1ab0b08b35/output/preview.png?Expires=4949337600&Signature=Jr2w0mpyjxa1Cxbx6K1POZCtqaocPupaq12TwEEL~Eu~rCJR4vPRjMGFToJpQ5xw~UyhI~M4RV7BLBHR1qxbeCCtx9gihgmR1tcmqUx7tF-KAcMwHGazy59iWwTS9gMF02ehLfK7erYtIYpsp0PByiRhZmwswpuDjqfThqX7rHgrd7EKNGn3ONxnvXRb1ok1UOkAjF9ZXynKOUbEemSJHj5JomA0yGrupPJS~kgzsk4NAQ~~LRYjLnSugGVUJsCbse-raZcAXKmPi~-pLu~haY6iTptvaS1NswvuwzUZnmYjhj-ddRy9TLINScohyapTovBWsLK9NDWnm-wUnUBBjw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "alpha_thumbnail_url": null,
+    "texture_urls": []
+  }
+}

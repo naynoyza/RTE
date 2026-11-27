@@ -15,6 +15,9 @@ namespace RTE
     [Serializable]
     public class SeedSettings
     {
+        [Header("ต้นไม้")]
+        public bool UseVideoTree = true;        // ใช้วิดีโอต้นไม้ 3D (Resources/Video/tree_growth, พื้นหลังโปร่งใส) แทนภาพ 2D tree_s1..s4
+
         [Header("รอบเกม")]
         public float RoundSeconds = 60f;        // เวลาต่อรอบ (ใช้เมื่อ ShowTimer เปิด)
         public bool ShowTimer = false;          // มีเวลาจำกัดไหม (ปิด = ไม่จับเวลาเลย เล่นจนต้นไม้โตเต็มแล้วจบ)

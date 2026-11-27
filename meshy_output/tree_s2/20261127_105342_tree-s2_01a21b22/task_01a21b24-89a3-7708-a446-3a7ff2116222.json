@@ -1,0 +1,59 @@
+{
+  "id": "01a21b24-89a3-7708-a446-3a7ff2116222",
+  "type": "text-to-3d-refine",
+  "mode": "refine",
+  "name": "",
+  "model_type": "standard",
+  "seed": 2118049166,
+  "prompt": "young sapling, thin slightly curved brown stem about knee height with two small side twigs and three pairs of small green leaves, on a small soil mound, stylized cartoon hand-painted style, smooth simple shapes, brown trunk, bright lime green leaves, game asset, single object, no ground plane",
+  "texture_prompt": "cartoon hand-painted, brown bark trunk, bright lime and grass green leaves, brown soil",
+  "texture_image_url": "",
+  "status": "SUCCEEDED",
+  "created_at": 1795751709879,
+  "progress": 100,
+  "started_at": 1795751709895,
+  "finished_at": 1795751743308,
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/fce2ff06-0b81-4f1b-a5c3-bfe4c8487ffd/tasks/01a21b24-89a3-7708-a446-3a7ff2116222/output/model.glb?Expires=4949337600&Signature=ACrfhO1rVANXSChyNor4b0GGFvEJKGu3vx1nx0vI974ltXuKtCDjD~kDGXXb4RbpO9qZg-INtrmF74sisYJvMfjBBPNs~Dt0bci9NGpHOKU8~3zP47osPtr3Fpbir-T8jqp4XzVrivpcwwRI1a1z4p4qvJqWBOgpdLvwwrioMfyEK5sJAS647JmcP99K8ySBPFBVYWTK6aiPRvy1TzWbONyc6YWHtdhZyRB~0u10SE1HAZMgbU1L1bY6bKc1S1pjWg8C2oWCeyJiapB46j4~wVo257Luf09hM5ePEm7QFxZ8Gb8SjaJZ-7MUHxpr0Y7YifhSkcMNvVFcHhPy27hhhQ__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "thumbnail_url": "https://assets.meshy.ai/fce2ff06-0b81-4f1b-a5c3-bfe4c8487ffd/tasks/01a21b24-89a3-7708-a446-3a7ff2116222/output/preview.png?Expires=4949337600&Signature=LX4nrDKuLtF1PvJ2lEi8J3w80Fp~h-ZvuAxPDrfPaNceIWDdsNa7xBZxEkMvdcefzwN2EuyE2PoGuduH1XDtATUepiNCsMfZQ8CO2Fckn7Qmwpxs2~mMNRPs1STkCsaOscz4uIoHVtv55jhqtmgwjQCz9V7aRAcQhnuwJ6C-8KWjgAKNqVWYEDV8-aXVx5swttbSRIN1GRAQ2-hxmEGwyX7xNedGrRsfK26n-8L4gRD-fbvAQnO5cLCbGkqoxvMQVFs8jI9uViwH3BNoiKshHfbavDS1Q3W0CXbyrBMaN6eZpdtwUnovG5-KX5SE3wAYSgyZrXShOlkzf8mWhxRudA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "texture_urls": [
+    {
+      "base_color": "https://assets.meshy.ai/fce2ff06-0b81-4f1b-a5c3-bfe4c8487ffd/tasks/01a21b24-89a3-7708-a446-3a7ff2116222/output/texture_0.png?Expires=4949337600&Signature=MzrmNl1Nxu9IGPpRdhVkVgi9FQNhQs8H8HvYRf0MSshINrlGrSB3NoEaUPXs1WEM~7UnCqi0PYrSuGwCJLsAUG7bCj1uBcAqg-13VInrmEZeBNE7sofzqEWAYJU1y0aYhw1NyrnV~O62amlRa7hf1iyfnbQtohSGwg4xvUGBEJSkvcgusQ~C111DA6UG5MdiSND174bKaXyK8Sa-TUZgA2fNHT8aGYWslpyxBgND8ZVFOFYloAa6IuJ9jUE4j6vXD-CAMwQ2I2t6Gbzv28PGqBi33b6qE3ry0MPC823SITWV2pMLCMgfssXXv9qOTkglrTZm0Z3zymCuYmLz6AlBcg__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    }
+  ],
+  "hd_texture": true,
+  "texture_resolution": "4k",
+  "consumed_credits": 10,
+  "task_error": null,
+  "expires_at": null,
+  "input": {
+    "enable_pbr": false,
+    "mode": "refine",
+    "preview_task_id": "01a21b22-d7ea-7428-83d6-5ecd61b25944",
+    "remove_lighting": true,
+    "target_formats": [
+      "glb"
+    ],
+    "texture_prompt": "cartoon hand-painted, brown bark trunk, bright lime and grass green leaves, brown soil",
+    "texture_resolution": "4k"
+  },
+  "output": {
+    "seed": 2118049166,
+    "model_urls": {
+      "glb": "https://assets.meshy.ai/fce2ff06-0b81-4f1b-a5c3-bfe4c8487ffd/tasks/01a21b24-89a3-7708-a446-3a7ff2116222/output/model.glb?Expires=4949337600&Signature=ACrfhO1rVANXSChyNor4b0GGFvEJKGu3vx1nx0vI974ltXuKtCDjD~kDGXXb4RbpO9qZg-INtrmF74sisYJvMfjBBPNs~Dt0bci9NGpHOKU8~3zP47osPtr3Fpbir-T8jqp4XzVrivpcwwRI1a1z4p4qvJqWBOgpdLvwwrioMfyEK5sJAS647JmcP99K8ySBPFBVYWTK6aiPRvy1TzWbONyc6YWHtdhZyRB~0u10SE1HAZMgbU1L1bY6bKc1S1pjWg8C2oWCeyJiapB46j4~wVo257Luf09hM5ePEm7QFxZ8Gb8SjaJZ-7MUHxpr0Y7YifhSkcMNvVFcHhPy27hhhQ__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    },
+    "thumbnail_url": "https://assets.meshy.ai/fce2ff06-0b81-4f1b-a5c3-bfe4c8487ffd/tasks/01a21b24-89a3-7708-a446-3a7ff2116222/output/preview.png?Expires=4949337600&Signature=LX4nrDKuLtF1PvJ2lEi8J3w80Fp~h-ZvuAxPDrfPaNceIWDdsNa7xBZxEkMvdcefzwN2EuyE2PoGuduH1XDtATUepiNCsMfZQ8CO2Fckn7Qmwpxs2~mMNRPs1STkCsaOscz4uIoHVtv55jhqtmgwjQCz9V7aRAcQhnuwJ6C-8KWjgAKNqVWYEDV8-aXVx5swttbSRIN1GRAQ2-hxmEGwyX7xNedGrRsfK26n-8L4gRD-fbvAQnO5cLCbGkqoxvMQVFs8jI9uViwH3BNoiKshHfbavDS1Q3W0CXbyrBMaN6eZpdtwUnovG5-KX5SE3wAYSgyZrXShOlkzf8mWhxRudA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "alpha_thumbnail_url": null,
+    "texture_urls": [
+      {
+        "base_color": "https://assets.meshy.ai/fce2ff06-0b81-4f1b-a5c3-bfe4c8487ffd/tasks/01a21b24-89a3-7708-a446-3a7ff2116222/output/texture_0.png?Expires=4949337600&Signature=MzrmNl1Nxu9IGPpRdhVkVgi9FQNhQs8H8HvYRf0MSshINrlGrSB3NoEaUPXs1WEM~7UnCqi0PYrSuGwCJLsAUG7bCj1uBcAqg-13VInrmEZeBNE7sofzqEWAYJU1y0aYhw1NyrnV~O62amlRa7hf1iyfnbQtohSGwg4xvUGBEJSkvcgusQ~C111DA6UG5MdiSND174bKaXyK8Sa-TUZgA2fNHT8aGYWslpyxBgND8ZVFOFYloAa6IuJ9jUE4j6vXD-CAMwQ2I2t6Gbzv28PGqBi33b6qE3ry0MPC823SITWV2pMLCMgfssXXv9qOTkglrTZm0Z3zymCuYmLz6AlBcg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+        "metallic": null,
+        "roughness": null,
+        "normal": null,
+        "metallic_roughness": null,
+        "emission": null
+      }
+    ]
+  }
+}
