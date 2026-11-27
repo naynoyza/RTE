@@ -67,3 +67,6 @@ docs/consistency-failures.md
 # ---------- Meshy output ขนาดใหญ่ (สร้างใหม่ได้จาก Meshy task / เรนเดอร์ใหม่) ----------
 meshy_output/**/*.glb
 meshy_output/**/*.mov
+
+# ---------- QA screenshots (ใหญ่มาก ~2GB เก็บไว้ในเครื่อง ไม่ขึ้น GitHub) ----------
+production/qa/evidence/
